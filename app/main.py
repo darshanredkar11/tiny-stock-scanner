@@ -4,6 +4,7 @@ import hmac
 import base64
 import json
 import time
+import threading
 from typing import Optional
 
 from bson import ObjectId
@@ -12,11 +13,43 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError
+from app.scanner import DATA_SOURCE, SCAN_INTERVAL_SECONDS, scan_once, whatsapp_configured
 
 MONGODB_URI = os.getenv("MONGODB_URI")
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "tiny_stock_scanner")
 JWT_SECRET = os.getenv("JWT_SECRET", "development-only-change-me")
-app = FastAPI(title="Tiny Stock Scanner", version="0.2.0")
+app = FastAPI(title="Tiny Stock Scanner", version="0.3.0")
+_scanner_status = {
+    "status": "starting",
+    "message": "Waiting for the scanner worker to start.",
+    "last_scan": None,
+    "stocks_scanned": 0,
+    "source": DATA_SOURCE,
+}
+_scanner_thread = None
+
+
+def _scanner_loop():
+    while True:
+        try:
+            _scanner_status.update(scan_once(get_db()))
+        except Exception as exc:
+            _scanner_status.update({
+                "status": "error",
+                "message": f"Scanner cycle failed: {type(exc).__name__}",
+                "last_scan": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "source": DATA_SOURCE,
+            })
+        time.sleep(SCAN_INTERVAL_SECONDS)
+
+
+@app.on_event("startup")
+def start_scanner_worker():
+    global _scanner_thread
+    enabled = os.getenv("SCANNER_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
+    if MONGODB_URI and enabled and (_scanner_thread is None or not _scanner_thread.is_alive()):
+        _scanner_thread = threading.Thread(target=_scanner_loop, name="market-scanner", daemon=True)
+        _scanner_thread.start()
 
 @app.get("/", include_in_schema=False)
 def dashboard():
@@ -152,6 +185,8 @@ def add_stock(body: StockInput, authorization: Optional[str] = Header(default=No
         "previous_close": body.previous_close,
         "resistance": body.resistance,
         "actual_sell_price": None,
+        "sell_alert_active": False,
+        "buyback_alert_active": False,
     }
     try:
         result = database.stocks.insert_one(document)
@@ -186,8 +221,34 @@ def record_sale(stock_id: str, body: SaleInput, authorization: Optional[str] = H
     database = get_db()
     result = database.stocks.update_one(
         {"_id": object_id, "user_id": user_id},
-        {"$set": {"actual_sell_price": body.actual_sell_price}},
+        {"$set": {"actual_sell_price": body.actual_sell_price, "buyback_alert_active": False}},
     )
     if result.matched_count == 0:
         raise HTTPException(404, "Stock not found")
     return {"stock_id": stock_id, "actual_sell_price": body.actual_sell_price, "status": "recorded"}
+
+
+@app.get("/api/market/status")
+def market_status(authorization: Optional[str] = Header(default=None)):
+    current_user(authorization)
+    return {
+        **_scanner_status,
+        "interval_seconds": SCAN_INTERVAL_SECONDS,
+        "whatsapp_configured": whatsapp_configured(),
+        "scanner_enabled": bool(MONGODB_URI) and os.getenv("SCANNER_ENABLED", "true").strip().lower() not in {"0", "false", "no"},
+        "broker_login_required": False,
+        "source": DATA_SOURCE,
+    }
+
+
+@app.get("/api/alerts")
+def list_alerts(authorization: Optional[str] = Header(default=None)):
+    user_id = current_user(authorization)
+    database = get_db()
+    rows = database.alerts.find({"user_id": user_id}).sort("created_at", -1).limit(50)
+    result = []
+    for row in rows:
+        item = {key: value for key, value in row.items() if key not in ("_id", "user_id")}
+        item["id"] = str(row["_id"])
+        result.append(item)
+    return result
