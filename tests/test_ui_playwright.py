@@ -4,6 +4,7 @@ import json
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlparse
 from functools import partial
 
 import pytest
@@ -52,7 +53,7 @@ def fake_api(page: Page):
 
     def handle(route):
         request = route.request
-        path = request.url.split("127.0.0.1", 1)[-1].split("?", 1)[0]
+        path = urlparse(request.url).path
         method = request.method
         state["calls"].append((method, path))
         payload = json.loads(request.post_data) if request.post_data else {}
