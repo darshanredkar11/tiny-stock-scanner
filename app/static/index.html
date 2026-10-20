@@ -14,7 +14,7 @@
 <main class="wrap">
 <section id="authPanel" class="panel auth">
 <h2 id="authTitle">Sign in</h2>
-<div class="notice">For your private test setup. Live Kite prices and WhatsApp alerts are not connected yet.</div>
+<div class="notice">Public Yahoo Finance prices are used; they may be delayed or unavailable. No Zerodha login is required. WhatsApp delivery activates when Meta WhatsApp Cloud API credentials are configured.</div>
 <div class="grid"><div><label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com"></div><div><label for="password">Password (12+ characters)</label><input id="password" type="password" autocomplete="current-password" minlength="12"></div></div>
 <div class="actions" style="margin-top:14px"><button id="authBtn">Sign in</button><button id="switchAuth" class="secondary">Create account</button></div><div id="authStatus" class="status" role="status"></div>
 </section>
@@ -29,8 +29,8 @@
 </div>
 <div class="actions" style="margin-top:14px"><button id="addBtn">Add to watchlist</button><span class="muted" id="countText">0 / 40 stocks</span></div><div id="stockStatus" class="status" role="status"></div>
 </div>
-<div class="panel"><h2>Your watchlist</h2><div class="tablewrap"><table><thead><tr><th>Symbol</th><th>Exchange</th><th>Buy price</th><th>Previous close</th><th>Resistance</th><th>Recorded sell price</th><th>Actions</th></tr></thead><tbody id="stocksBody"></tbody></table></div><p id="emptyText" class="muted">Your watchlist is empty. Add a stock above.</p></div>
-<div class="panel"><h2>Signal rules</h2><p class="muted">Sell candidate: +2% from previous close, +1% from purchase price, or resistance crossed. Sell window ends at 10:45 IST. Buy-back candidate: 1% below recorded actual sell price, window ends at 15:15 IST. These rules are not live until Kite market data and alert delivery are implemented. Costs and slippage can exceed small moves.</p></div>
+<div class="panel"><h2>Your watchlist</h2><div class="tablewrap"><table><thead><tr><th>Symbol</th><th>Exchange</th><th>Market price</th><th>Price time</th><th>Buy price</th><th>Previous close</th><th>Resistance</th><th>Recorded sell price</th><th>Actions</th></tr></thead><tbody id="stocksBody"></tbody></table></div><p id="emptyText" class="muted">Your watchlist is empty. Add a stock above.</p></div>
+<div class="panel"><h2>Recent alerts</h2><ul id="alertsList"></ul><p id="alertsEmpty" class="muted">No alerts yet. The scanner will list any triggered signals here.</p></div>\n<div class="panel"><h2>Signal rules</h2><p class="muted">Sell alert: at least 2% above the previous close, at least 1% above purchase price, or resistance crossed, from 09:15 until before 10:45 IST. Buy-back alert: at least 1% below the recorded actual sale price, from 09:15 until before 15:15 IST. Uses public Yahoo Finance market data without broker login; feed may be delayed, incomplete, or rate-limited. Alerts only: no orders are placed. Brokerage, taxes, spread and slippage can exceed small moves.</p></div>
 </section>
 </main>
 <script>
@@ -84,7 +84,7 @@ async function loadStocks(){
   $('emptyText').classList.toggle('hidden',stocks.length>0);$('countText').textContent=stocks.length+' / 40 stocks';
   for(const stock of stocks){
    const tr=document.createElement('tr');
-   const vals=[stock.symbol,stock.exchange,stock.purchase_price??'—',stock.previous_close??'—',stock.resistance??'—',stock.actual_sell_price??'—'];
+   const priceTime=stock.market_price_at?new Date(stock.market_price_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';\n   const vals=[stock.symbol,stock.exchange,stock.market_price==null?'—':Number(stock.market_price).toFixed(2),priceTime,stock.purchase_price??'—',stock.previous_close??'—',stock.resistance??'—',stock.actual_sell_price??'—'];
    for(const value of vals){const td=document.createElement('td');td.textContent=value;tr.appendChild(td);}
    const actions=document.createElement('td'), input=document.createElement('input'), save=document.createElement('button'), del=document.createElement('button');
    input.type='number';input.min='0.01';input.step='0.01';input.placeholder='Actual sell price';input.setAttribute('aria-label','Actual sell price for '+stock.symbol);input.style.width='130px';
