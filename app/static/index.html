@@ -84,7 +84,8 @@ async function loadStocks(){
   $('emptyText').classList.toggle('hidden',stocks.length>0);$('countText').textContent=stocks.length+' / 40 stocks';
   for(const stock of stocks){
    const tr=document.createElement('tr');
-   const priceTime=stock.market_price_at?new Date(stock.market_price_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';\n   const vals=[stock.symbol,stock.exchange,stock.market_price==null?'—':Number(stock.market_price).toFixed(2),priceTime,stock.purchase_price??'—',stock.previous_close??'—',stock.resistance??'—',stock.actual_sell_price??'—'];
+   const priceTime=stock.market_price_at?new Date(stock.market_price_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+   const vals=[stock.symbol,stock.exchange,stock.market_price==null?'—':Number(stock.market_price).toFixed(2),priceTime,stock.purchase_price??'—',stock.previous_close??'—',stock.resistance??'—',stock.actual_sell_price??'—'];
    for(const value of vals){const td=document.createElement('td');td.textContent=value;tr.appendChild(td);}
    const actions=document.createElement('td'), input=document.createElement('input'), save=document.createElement('button'), del=document.createElement('button');
    input.type='number';input.min='0.01';input.step='0.01';input.placeholder='Actual sell price';input.setAttribute('aria-label','Actual sell price for '+stock.symbol);input.style.width='130px';
