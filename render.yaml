@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: tiny-stock-scanner
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_PATH
+        value: /var/data/scanner.db
+    disk:
+      name: scanner-data
+      mountPath: /var/data
+      sizeGB: 1
