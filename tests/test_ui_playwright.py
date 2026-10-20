@@ -7,10 +7,24 @@ from pathlib import Path
 from functools import partial
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, expect, sync_playwright
 
 
 STATIC_DIR = Path(__file__).resolve().parents[1] / "app" / "static"
+
+
+@pytest.fixture
+def page():
+    # Use Playwright's library directly; no pytest-playwright plugin is required.
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        context = browser.new_context()
+        browser_page = context.new_page()
+        try:
+            yield browser_page
+        finally:
+            context.close()
+            browser.close()
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
