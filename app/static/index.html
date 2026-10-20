@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tiny Stock Scanner</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:#e9eef8;background:#0c1220;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}header{padding:22px max(20px,calc((100% - 1080px)/2));border-bottom:1px solid #263149;background:#101a2b;display:flex;align-items:center;justify-content:space-between;gap:12px}h1{font-size:21px;margin:0}header p{margin:5px 0 0;color:#9fb0ca;font-size:13px}.wrap{max-width:1080px;margin:28px auto;padding:0 20px}.panel{background:#121d30;border:1px solid #263650;border-radius:14px;padding:20px;margin-bottom:18px}.panel h2{font-size:17px;margin:0 0 15px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}label{font-size:12px;color:#aebed4;display:block;margin-bottom:6px}input,select{width:100%;border:1px solid #344660;background:#0c1525;color:#eef4ff;border-radius:8px;padding:11px;font:inherit;min-width:0}button{border:0;border-radius:8px;padding:11px 15px;background:#c6e4ff;color:#11233a;font-weight:700;cursor:pointer}button.secondary{background:#263650;color:#eaf2ff}button.danger{background:#4a2833;color:#ffdce3}.actions{display:flex;gap:9px;align-items:end;flex-wrap:wrap}.actions button{white-space:nowrap}.status{color:#aebed4;font-size:13px;min-height:18px;margin-top:12px}.status.error{color:#ff9aa8}.status.ok{color:#a8edc1}.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid #263650;font-size:13px}th{color:#9fb0ca;font-weight:600}.muted{color:#9fb0ca;font-size:13px}.pill{font-size:11px;border:1px solid #344660;padding:4px 7px;border-radius:99px;color:#b8c8de}.hidden{display:none!important}.auth{max-width:430px;margin:8vh auto}.auth .grid{grid-template-columns:1fr}.notice{color:#d4dfef;background:#1b2a40;border-radius:9px;padding:12px;font-size:13px;line-height:1.5;margin-bottom:16px}.top-actions{display:flex;gap:8px;align-items:center}@media(max-width:750px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}header{padding:18px 20px}.wrap{margin:18px auto}.panel{padding:15px}}@media(max-width:450px){.grid{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header><div><h1>Tiny Stock Scanner</h1><p>Private NSE/BSE watchlist · alert-only · no order placement</p></div><div class="top-actions"><span id="userBadge" class="pill hidden"></span><button id="logoutBtn" class="secondary hidden">Log out</button></div></header>
+<main class="wrap">
+<section id="authPanel" class="panel auth">
+<h2 id="authTitle">Sign in</h2>
+<div class="notice">For your private test setup. Live Kite prices and WhatsApp alerts are not connected yet.</div>
+<div class="grid"><div><label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com"></div><div><label for="password">Password (12+ characters)</label><input id="password" type="password" autocomplete="current-password" minlength="12"></div></div>
+<div class="actions" style="margin-top:14px"><button id="authBtn">Sign in</button><button id="switchAuth" class="secondary">Create account</button></div><div id="authStatus" class="status" role="status"></div>
+</section>
+<section id="appPanel" class="hidden">
+<div class="panel"><h2>Add a stock</h2>
+<div class="grid">
+<div><label for="symbol">Symbol</label><input id="symbol" maxlength="24" placeholder="RELIANCE"></div>
+<div><label for="exchange">Exchange</label><select id="exchange"><option>NSE</option><option>BSE</option></select></div>
+<div><label for="purchase">Purchase price (optional)</label><input id="purchase" type="number" min="0" step="0.01" placeholder="e.g. 1250"></div>
+<div><label for="previous">Previous close (optional)</label><input id="previous" type="number" min="0" step="0.01" placeholder="e.g. 1230"></div>
+<div><label for="resistance">Resistance (optional)</label><input id="resistance" type="number" min="0" step="0.01" placeholder="e.g. 1280"></div>
+</div>
+<div class="actions" style="margin-top:14px"><button id="addBtn">Add to watchlist</button><span class="muted" id="countText">0 / 40 stocks</span></div><div id="stockStatus" class="status" role="status"></div>
+</div>
+<div class="panel"><h2>Your watchlist</h2><div class="tablewrap"><table><thead><tr><th>Symbol</th><th>Exchange</th><th>Buy price</th><th>Previous close</th><th>Resistance</th><th>Recorded sell price</th><th>Actions</th></tr></thead><tbody id="stocksBody"></tbody></table></div><p id="emptyText" class="muted">Your watchlist is empty. Add a stock above.</p></div>
+<div class="panel"><h2>Signal rules</h2><p class="muted">Sell candidate: +2% from previous close, +1% from purchase price, or resistance crossed. Sell window ends at 10:45 IST. Buy-back candidate: 1% below recorded actual sell price, window ends at 15:15 IST. These rules are not live until Kite market data and alert delivery are implemented. Costs and slippage can exceed small moves.</p></div>
+</section>
+</main>
+<script>
+let token = sessionStorage.getItem('tss_token') || '';
+let email = sessionStorage.getItem('tss_email') || '';
+let registerMode = false;
+const $ = id => document.getElementById(id);
+const showStatus = (id, message, error=false) => { const el=$(id); el.textContent=message; el.className='status '+(error?'error':'ok'); };
+async function api(path, options={}) {
+  const headers = {'Content-Type':'application/json', ...(options.headers||{})};
+  if(token) headers.Authorization='Bearer '+token;
+  const response=await fetch(path,{...options,headers});
+  if(response.status===204) return null;
+  const data=await response.json().catch(()=>({detail:'Unexpected server response'}));
+  if(!response.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+function renderAuth(){
+  $('authPanel').classList.toggle('hidden',!!token);
+  $('appPanel').classList.toggle('hidden',!token);
+  $('logoutBtn').classList.toggle('hidden',!token);
+  $('userBadge').classList.toggle('hidden',!token);
+  $('userBadge').textContent=email;
+  $('authTitle').textContent=registerMode?'Create account':'Sign in';
+  $('authBtn').textContent=registerMode?'Create account':'Sign in';
+  $('switchAuth').textContent=registerMode?'I already have an account':'Create account';
+}
+$('switchAuth').onclick=()=>{registerMode=!registerMode;renderAuth();showStatus('authStatus','');};
+$('authBtn').onclick=async()=>{
+ const em=$('email').value.trim().toLowerCase(), pw=$('password').value;
+ if(!em||pw.length<12){showStatus('authStatus','Enter a valid email and a password of at least 12 characters.',true);return;}
+ $('authBtn').disabled=true;
+ try{
+  const result=await api(registerMode?'/api/register':'/api/login',{method:'POST',body:JSON.stringify({email:em,password:pw})});
+  token=result.access_token;email=em;sessionStorage.setItem('tss_token',token);sessionStorage.setItem('tss_email',email);renderAuth();await loadStocks();
+ }catch(e){showStatus('authStatus',e.message,true);}finally{$('authBtn').disabled=false;}
+};
+$('logoutBtn').onclick=()=>{token='';email='';sessionStorage.removeItem('tss_token');sessionStorage.removeItem('tss_email');renderAuth();};
+function numOrNull(id){const v=$(id).value;return v===''?null:Number(v);}
+$('addBtn').onclick=async()=>{
+ const symbol=$('symbol').value.trim().toUpperCase();
+ if(!symbol){showStatus('stockStatus','Enter a stock symbol.',true);return;}
+ const payload={symbol,exchange:$('exchange').value,purchase_price:numOrNull('purchase'),previous_close:numOrNull('previous'),resistance:numOrNull('resistance')};
+ $('addBtn').disabled=true;
+ try{await api('/api/stocks',{method:'POST',body:JSON.stringify(payload)});['symbol','purchase','previous','resistance'].forEach(id=>$(id).value='');showStatus('stockStatus','Stock added.');await loadStocks();}
+ catch(e){showStatus('stockStatus',e.message,true);}finally{$('addBtn').disabled=false;}
+};
+async function loadStocks(){
+ try{
+  const stocks=await api('/api/stocks');$('stocksBody').replaceChildren();
+  $('emptyText').classList.toggle('hidden',stocks.length>0);$('countText').textContent=stocks.length+' / 40 stocks';
+  for(const stock of stocks){
+   const tr=document.createElement('tr');
+   const vals=[stock.symbol,stock.exchange,stock.purchase_price??'—',stock.previous_close??'—',stock.resistance??'—',stock.actual_sell_price??'—'];
+   for(const value of vals){const td=document.createElement('td');td.textContent=value;tr.appendChild(td);}
+   const actions=document.createElement('td'), input=document.createElement('input'), save=document.createElement('button'), del=document.createElement('button');
+   input.type='number';input.min='0.01';input.step='0.01';input.placeholder='Actual sell price';input.setAttribute('aria-label','Actual sell price for '+stock.symbol);input.style.width='130px';
+   save.textContent='Record sale';save.style.marginLeft='6px';save.onclick=async()=>{if(!(Number(input.value)>0)){showStatus('stockStatus','Enter a valid actual sell price.',true);return;}try{await api('/api/stocks/'+encodeURIComponent(stock.id)+'/sale',{method:'POST',body:JSON.stringify({actual_sell_price:Number(input.value)})});showStatus('stockStatus','Actual sale price recorded.');await loadStocks();}catch(e){showStatus('stockStatus',e.message,true);}};
+   del.textContent='Remove';del.className='danger';del.style.marginLeft='6px';del.onclick=async()=>{if(!confirm('Remove '+stock.symbol+' from your watchlist?'))return;try{await api('/api/stocks/'+encodeURIComponent(stock.id),{method:'DELETE'});await loadStocks();}catch(e){showStatus('stockStatus',e.message,true);}};
+   actions.append(input,save,del);tr.appendChild(actions);$('stocksBody').appendChild(tr);
+  }
+ }catch(e){if(e.message.includes('token')||e.message.includes('Invalid')){$('logoutBtn').click();}else showStatus('stockStatus',e.message,true);}
+}
+renderAuth();if(token)loadStocks();
+</script>
+</body>
+</html>
