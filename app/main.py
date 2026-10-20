@@ -46,7 +46,7 @@ def token_for(user_id: str):
         json.dumps({"sub": str(user_id), "exp": int(time.time()) + 86400}).encode()
     ).rstrip(b"=")
     signature = hmac.new(JWT_SECRET.encode(), payload, hashlib.sha256).digest()
-    return payload.decode() + "." + base64.urlsafe_b64encode(signature).decode().rstrip(b"=")
+    return payload.decode() + "." + base64.urlsafe_b64encode(signature).decode().rstrip("=")
 
 def current_user(authorization: Optional[str]):
     if not authorization or not authorization.startswith("Bearer "):
