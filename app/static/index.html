@@ -92,9 +92,25 @@ async function loadStocks(){
    del.textContent='Remove';del.className='danger';del.style.marginLeft='6px';del.onclick=async()=>{if(!confirm('Remove '+stock.symbol+' from your watchlist?'))return;try{await api('/api/stocks/'+encodeURIComponent(stock.id),{method:'DELETE'});await loadStocks();}catch(e){showStatus('stockStatus',e.message,true);}};
    actions.append(input,save,del);tr.appendChild(actions);$('stocksBody').appendChild(tr);
   }
+  await loadMarketStatus();
+  await loadAlerts();
  }catch(e){if(e.message.includes('token')||e.message.includes('Invalid')){$('logoutBtn').click();}else showStatus('stockStatus',e.message,true);}
 }
-renderAuth();if(token)loadStocks();
+async function loadMarketStatus(){
+ try{
+  const s=await api('/api/market/status');
+  $('marketStatus').textContent=(s.status||'unknown').toUpperCase()+' — '+(s.message||'');
+  $('marketDetails').textContent=(s.source||'Public feed')+' · scan every '+(s.interval_seconds||60)+'s · WhatsApp '+(s.whatsapp_configured?'configured':'not configured')+' · broker login not required';
+ }catch(e){$('marketStatus').textContent='Status unavailable: '+e.message;}
+}
+async function loadAlerts(){
+ try{
+  const alerts=await api('/api/alerts'), list=$('alertsList');list.replaceChildren();
+  $('alertsEmpty').classList.toggle('hidden',alerts.length>0);
+  for(const a of alerts){const li=document.createElement('li');const when=a.created_at?new Date(a.created_at).toLocaleString('en-IN'):'time unknown';li.textContent=when+' · '+a.action+' '+a.symbol+' ('+a.exchange+') at ₹'+Number(a.price).toFixed(2)+' — '+a.reason+' · WhatsApp: '+a.delivery_status;list.appendChild(li);}
+ }catch(e){$('alertsEmpty').textContent='Could not load alerts: '+e.message;}
+}
+renderAuth();if(token)loadStocks();setInterval(()=>{if(token)loadStocks();},60000);
 </script>
 </body>
 </html>
