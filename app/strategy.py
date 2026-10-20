@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 IST = ZoneInfo("Asia/Kolkata")
 SELL_START = time(9, 15)
 SELL_CUTOFF = time(10, 45)
+BUYBACK_START = time(9, 15)
 BUYBACK_CUTOFF = time(15, 15)
 
 @dataclass(frozen=True)
@@ -31,10 +32,10 @@ def evaluate_sell(*, price: float, previous_close: float, purchase_price: float 
     return None
 
 def evaluate_buyback(*, price: float, actual_sell_price: float | None, now: datetime) -> Signal | None:
-    """Return a buy-back alert candidate after an actual sale; never place orders."""
+    """Return a buy-back alert candidate during market hours after an actual sale; never place orders."""
     local = now.astimezone(IST)
     clock = local.time().replace(tzinfo=None)
-    if local.weekday() >= 5 or clock >= BUYBACK_CUTOFF:
+    if local.weekday() >= 5 or not (BUYBACK_START <= clock < BUYBACK_CUTOFF):
         return None
     if actual_sell_price is None or actual_sell_price <= 0 or price <= 0:
         return None
