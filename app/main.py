@@ -8,6 +8,7 @@ from typing import Optional
 
 from bson import ObjectId
 from fastapi import FastAPI, HTTPException, Header
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError
@@ -16,6 +17,10 @@ MONGODB_URI = os.getenv("MONGODB_URI")
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "tiny_stock_scanner")
 JWT_SECRET = os.getenv("JWT_SECRET", "development-only-change-me")
 app = FastAPI(title="Tiny Stock Scanner", version="0.2.0")
+
+@app.get("/", include_in_schema=False)
+def dashboard():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "static", "index.html"))
 _mongo_client = None
 
 def configure_indexes(database):
