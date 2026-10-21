@@ -16,8 +16,8 @@ def test_sell_purchase_gain_triggers():
 def test_sell_resistance_triggers():
     assert evaluate_sell(price=105, previous_close=104, purchase_price=None, resistance=105, now=dt(20,10,0)).reason == "resistance crossed"
 
-def test_sell_cutoff_is_exclusive():
-    assert evaluate_sell(price=110, previous_close=100, purchase_price=None, resistance=None, now=dt(20,10,45)) is None
+def test_sell_cutoff_is_exclusive_at_market_close():
+    assert evaluate_sell(price=110, previous_close=100, purchase_price=None, resistance=None, now=dt(20,15,30)) is None
 
 def test_sell_window_opens_at_0915():
     assert evaluate_sell(price=102, previous_close=100, purchase_price=None, resistance=None, now=dt(20,9,15))
@@ -37,8 +37,8 @@ def test_buyback_window_opens_at_0915():
 def test_buyback_before_open_is_blocked():
     assert evaluate_buyback(price=98, actual_sell_price=100, now=dt(20,9,14)) is None
 
-def test_buyback_cutoff_is_exclusive():
-    assert evaluate_buyback(price=98, actual_sell_price=100, now=dt(20,15,15)) is None
+def test_buyback_cutoff_is_exclusive_at_market_close():
+    assert evaluate_buyback(price=98, actual_sell_price=100, now=dt(20,15,30)) is None
 
 def test_buyback_requires_actual_sale():
     assert evaluate_buyback(price=98, actual_sell_price=None, now=dt(20,14,0)) is None
