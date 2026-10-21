@@ -4,9 +4,9 @@ from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
 SELL_START = time(9, 15)
-SELL_CUTOFF = time(10, 45)
+SELL_CUTOFF = time(15, 30)
 BUYBACK_START = time(9, 15)
-BUYBACK_CUTOFF = time(15, 15)
+BUYBACK_CUTOFF = time(15, 30)
 
 @dataclass(frozen=True)
 class Signal:
