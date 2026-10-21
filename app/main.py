@@ -5,6 +5,7 @@ import base64
 import json
 import time
 import threading
+import logging
 from typing import Optional
 
 from bson import ObjectId
@@ -14,6 +15,8 @@ from pydantic import BaseModel, Field
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError
 from app.scanner import DATA_SOURCE, SCAN_INTERVAL_SECONDS, scan_once, whatsapp_configured
+
+logger = logging.getLogger("tiny_stock_scanner")
 
 MONGODB_URI = os.getenv("MONGODB_URI")
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "tiny_stock_scanner")
@@ -32,7 +35,16 @@ _scanner_thread = None
 def _scanner_loop():
     while True:
         try:
-            _scanner_status.update(scan_once(get_db()))
+            result = scan_once(get_db())
+            _scanner_status.update(result)
+            logger.info(
+                "scanner_cycle status=%s stocks_scanned=%s alerts_created=%s source=%s message=%s",
+                result.get("status"),
+                result.get("stocks_scanned", 0),
+                result.get("alerts_created", 0),
+                result.get("source", DATA_SOURCE),
+                result.get("message", ""),
+            )
         except Exception as exc:
             _scanner_status.update({
                 "status": "error",
@@ -40,6 +52,7 @@ def _scanner_loop():
                 "last_scan": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "source": DATA_SOURCE,
             })
+            logger.exception("scanner_cycle_failed exception_type=%s", type(exc).__name__)
         time.sleep(SCAN_INTERVAL_SECONDS)
 
 
@@ -50,6 +63,11 @@ def start_scanner_worker():
     if MONGODB_URI and enabled and (_scanner_thread is None or not _scanner_thread.is_alive()):
         _scanner_thread = threading.Thread(target=_scanner_loop, name="market-scanner", daemon=True)
         _scanner_thread.start()
+        logger.info("scanner_worker_started interval_seconds=%s source=%s", SCAN_INTERVAL_SECONDS, DATA_SOURCE)
+    elif not MONGODB_URI:
+        logger.error("scanner_worker_not_started reason=mongodb_uri_missing")
+    elif not enabled:
+        logger.warning("scanner_worker_disabled_by_configuration")
 
 @app.get("/", include_in_schema=False)
 def dashboard():
