@@ -30,9 +30,10 @@
 <div class="actions" style="margin-top:14px"><button id="addBtn">Add to watchlist</button><span class="muted" id="countText">0 / 40 stocks</span></div><div id="stockStatus" class="status" role="status"></div>
 </div>
 <div class="panel"><h2>Your watchlist</h2><div class="tablewrap"><table><thead><tr><th>Symbol</th><th>Exchange</th><th>Market price</th><th>Price time</th><th>Buy price</th><th>Previous close</th><th>Resistance</th><th>Recorded sell price</th><th>Actions</th></tr></thead><tbody id="stocksBody"></tbody></table></div><p id="emptyText" class="muted">Your watchlist is empty. Add a stock above.</p></div>
-<div class="panel"><h2>Recent alerts</h2><ul id="alertsList"></ul><p id="alertsEmpty" class="muted">No alerts yet. The scanner will list any triggered signals here.</p></div>
+<div class="panel"><h2>Live price graph</h2><div class="actions" style="margin-bottom:12px"><label for="chartSymbol" style="margin:0">Stock</label><select id="chartSymbol" style="max-width:220px"></select><span class="muted">Refreshes every 30 seconds · history starts accumulating after deployment</span></div><div class="tablewrap"><svg id="priceChart" viewBox="0 0 900 300" role="img" aria-label="Live stock price chart" style="width:100%;min-width:320px;height:auto;display:block;background:#0c1525;border-radius:10px"></svg></div><p id="chartStatus" class="muted">Waiting for price history…</p></div>
+<div class="panel"><h2>Recent alerts (market session until 3:30 PM IST)</h2><ul id="alertsList"></ul><p id="alertsEmpty" class="muted">No alerts yet. The scanner will list any triggered signals here.</p></div>
 <div class="panel"><h2>Scanner status</h2><p id="marketStatus" class="muted" role="status">Waiting for scanner status…</p><p id="marketDetails" class="muted"></p></div>
-<div class="panel"><h2>Signal rules</h2><p class="muted">Sell alert: at least 2% above the previous close, at least 1% above purchase price, or resistance crossed, from 09:15 until before 10:45 IST. Buy-back alert: at least 1% below the recorded actual sale price, from 09:15 until before 15:15 IST. Uses public Yahoo Finance market data without broker login; feed may be delayed, incomplete, or rate-limited. Alerts only: no orders are placed. Brokerage, taxes, spread and slippage can exceed small moves.</p></div>
+<div class="panel"><h2>Signal rules</h2><p class="muted">Sell alert: at least 2% above the previous close, at least 1% above purchase price, or resistance crossed, from 09:15 until before 15:30 IST. Buy-back alert: at least 1% below the recorded actual sale price, from 09:15 until before 15:30 IST. Uses public Yahoo Finance market data without broker login; feed may be delayed, incomplete, or rate-limited. Alerts only: no orders are placed. Brokerage, taxes, spread and slippage can exceed small moves.</p></div>
 </section>
 </main>
 <script>
@@ -97,6 +98,7 @@ async function loadStocks(){
   }
   await loadMarketStatus();
   await loadAlerts();
+  await loadHistory();
  }catch(e){if(e.message.includes('token')||e.message.includes('Invalid')){$('logoutBtn').click();}else showStatus('stockStatus',e.message,true);}
 }
 async function loadMarketStatus(){
@@ -113,7 +115,34 @@ async function loadAlerts(){
   for(const a of alerts){const li=document.createElement('li');const when=a.created_at?new Date(a.created_at).toLocaleString('en-IN'):'time unknown';li.textContent=when+' · '+a.action+' '+a.symbol+' ('+a.exchange+') at ₹'+Number(a.price).toFixed(2)+' — '+a.reason+' · WhatsApp: '+a.delivery_status;list.appendChild(li);}
  }catch(e){$('alertsEmpty').textContent='Could not load alerts: '+e.message;}
 }
-renderAuth();if(token)loadStocks();setInterval(()=>{if(token)loadStocks();},60000);
+let historyByStock = {};
+$('chartSymbol').onchange=()=>renderPriceChart();
+function svgNode(name,attrs={},textValue=null){
+ const el=document.createElementNS('http://www.w3.org/2000/svg',name);
+ for(const [key,value] of Object.entries(attrs))el.setAttribute(key,String(value));
+ if(textValue!==null)el.textContent=textValue;
+ return el;
+}
+function renderPriceChart(){
+ const svg=$('priceChart');svg.replaceChildren();
+ const selected=$('chartSymbol').value, points=historyByStock[selected]||[];
+ const W=900,H=300,L=68,R=24,T=24,B=42,plotW=W-L-R,plotH=H-T-B;
+ if(!selected||points.length===0){svg.append(svgNode('text',{x:W/2,y:H/2,'text-anchor':'middle',fill:'#9fb0ca','font-size':16},'Waiting for fresh price points…'));$('chartStatus').textContent='The graph fills as the scanner records prices. It may be empty until a fresh Yahoo Finance quote is received.';return;}
+ const vals=points.map(p=>Number(p.price)).filter(v=>Number.isFinite(v)&&v>0);if(!vals.length)return;
+ let min=Math.min(...vals),max=Math.max(...vals);if(min===max){min*=0.999;max*=1.001;}
+ const y=v=>T+(max-v)/(max-min)*plotH, x=i=>L+(points.length<=1?0:i/(points.length-1))*plotW;
+ for(let i=0;i<=4;i++){const v=min+(max-min)*i/4,yy=y(v);svg.append(svgNode('line',{x1:L,y1:yy,x2:W-R,y2:yy,stroke:'#263650','stroke-width':1}));svg.append(svgNode('text',{x:L-10,y:yy+4,'text-anchor':'end',fill:'#9fb0ca','font-size':12},'₹'+v.toFixed(2)));}
+ const path=points.map((p,i)=>(i?'L':'M')+' '+x(i).toFixed(2)+' '+y(Number(p.price)).toFixed(2)).join(' ');svg.append(svgNode('path',{d:path,fill:'none',stroke:'#82c8ff','stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));
+ const last=points[points.length-1],lastX=x(points.length-1),lastY=y(Number(last.price));svg.append(svgNode('circle',{cx:lastX,cy:lastY,r:4,fill:'#c6e4ff'}));
+ svg.append(svgNode('text',{x:L,y:H-14,fill:'#9fb0ca','font-size':12},new Date(points[0].timestamp).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})));
+ svg.append(svgNode('text',{x:W-R,y:H-14,'text-anchor':'end',fill:'#9fb0ca','font-size':12},new Date(last.timestamp).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})));
+ $('chartStatus').textContent=selected+' · latest ₹'+Number(last.price).toFixed(2)+' · '+new Date(last.timestamp).toLocaleString('en-IN')+' · '+points.length+' recorded point(s)';
+}
+async function loadHistory(){
+ try{historyByStock=await api('/api/market/history');const select=$('chartSymbol'),prior=select.value,symbols=Object.keys(historyByStock).sort();select.replaceChildren();for(const key of symbols){const opt=document.createElement('option');opt.value=key;opt.textContent=key;select.appendChild(opt);}if(symbols.includes(prior))select.value=prior;else if(symbols.length)select.value=symbols[0];renderPriceChart();}
+ catch(e){$('chartStatus').textContent='Price history unavailable: '+e.message;}
+}
+renderAuth();if(token)loadStocks();setInterval(()=>{if(token)loadStocks();},30000);
 </script>
 </body>
 </html>
