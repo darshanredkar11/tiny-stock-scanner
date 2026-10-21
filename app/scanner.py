@@ -192,8 +192,8 @@ def scan_once(database, now: datetime | None = None, fetcher=fetch_market_prices
 
     scanned = 0
     alerts_created = 0
-    sell_window = _market_window(now, (9, 15), (10, 45))
-    buyback_window = _market_window(now, (9, 15), (15, 15))
+    sell_window = _market_window(now, (9, 15), (15, 30))
+    buyback_window = _market_window(now, (9, 15), (15, 30))
 
     for stock in stocks:
         key = (stock.get("exchange", "NSE"), stock["symbol"].upper())
