@@ -95,6 +95,15 @@ def fake_api(page: Page):
         if path == "/api/alerts" and method == "GET":
             route.fulfill(json=state["alerts"])
             return
+        if path == "/api/market/history" and method == "GET":
+            route.fulfill(json={
+                str(s["exchange"]) + ":" + str(s["symbol"]): [{
+                    "price": s.get("market_price", 123.45),
+                    "timestamp": s.get("market_price_at", "2026-10-21T04:00:00Z"),
+                    "source": "Mock market feed",
+                }] for s in state["stocks"]
+            })
+            return
         if path.startswith("/api/stocks/") and path.endswith("/sale") and method == "POST":
             stock_id = path.split("/")[-2]
             stock = next((s for s in state["stocks"] if s["id"] == stock_id), None)
