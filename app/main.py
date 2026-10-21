@@ -81,6 +81,7 @@ def configure_indexes(database):
         unique=True,
     )
     database.stocks.create_index([("user_id", ASCENDING)])
+    database.price_history.create_index([("user_id", ASCENDING), ("stock_id", ASCENDING), ("timestamp", ASCENDING)])
 
 def get_db():
     global _mongo_client
@@ -257,6 +258,28 @@ def market_status(authorization: Optional[str] = Header(default=None)):
         "broker_login_required": False,
         "source": DATA_SOURCE,
     }
+
+
+@app.get("/api/market/history")
+def market_history(authorization: Optional[str] = Header(default=None)):
+    user_id = current_user(authorization)
+    database = get_db()
+    rows = database.price_history.find({"user_id": user_id}).sort("timestamp", -1).limit(7200)
+    grouped = {}
+    counts = {}
+    for row in rows:
+        key = f"{row.get('exchange', 'NSE')}:{row.get('symbol', '')}"
+        if counts.get(key, 0) >= 180:
+            continue
+        grouped.setdefault(key, []).append({
+            "price": row.get("price"),
+            "timestamp": row.get("timestamp"),
+            "source": row.get("source", DATA_SOURCE),
+        })
+        counts[key] = counts.get(key, 0) + 1
+    for points in grouped.values():
+        points.reverse()
+    return grouped
 
 
 @app.get("/api/alerts")
