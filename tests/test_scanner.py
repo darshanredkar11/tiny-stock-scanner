@@ -55,7 +55,7 @@ def test_scanner_persists_market_price_and_deduplicates_sell_alerts():
     assert alert["delivery_status"] == "sent"
 
 
-def test_scanner_does_not_alert_outside_sell_window():
+def test_scanner_alerts_after_old_morning_cutoff_until_market_close():
     database = mongomock.MongoClient()["tss"]
     database.stocks.insert_one({
         "user_id": "user-1",
@@ -67,7 +67,7 @@ def test_scanner_does_not_alert_outside_sell_window():
         "actual_sell_price": None,
         "sell_alert_active": False,
     })
-    now = datetime(2026, 10, 20, 10, 45, tzinfo=IST)
+    now = datetime(2026, 10, 20, 11, 0, tzinfo=IST)
     prices = {
         ("NSE", "RELIANCE"): {
             "price": 102.0,
@@ -80,5 +80,5 @@ def test_scanner_does_not_alert_outside_sell_window():
         database, now=now, fetcher=lambda stocks, now=None: prices,
         notifier=lambda message: "sent",
     )
-    assert result["alerts_created"] == 0
-    assert database.alerts.count_documents({}) == 0
+    assert result["alerts_created"] == 1
+    assert database.alerts.count_documents({}) == 1
