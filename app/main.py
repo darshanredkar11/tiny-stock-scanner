@@ -16,7 +16,7 @@ from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError
 from app.scanner import DATA_SOURCE, SCAN_INTERVAL_SECONDS, scan_once, whatsapp_configured
 
-logger = logging.getLogger("tiny_stock_scanner")
+logger = logging.getLogger("uvicorn.error")
 
 MONGODB_URI = os.getenv("MONGODB_URI")
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "tiny_stock_scanner")
