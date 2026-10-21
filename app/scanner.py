@@ -11,7 +11,7 @@ from app.strategy import evaluate_buyback, evaluate_sell
 
 IST = ZoneInfo("Asia/Kolkata")
 DATA_SOURCE = "Yahoo Finance (public feed; may be delayed)"
-SCAN_INTERVAL_SECONDS = max(30, int(os.getenv("SCAN_INTERVAL_SECONDS", "60")))
+SCAN_INTERVAL_SECONDS = max(30, int(os.getenv("SCAN_INTERVAL_SECONDS", "30")))
 MAX_DATA_AGE_MINUTES = 20
 
 
@@ -104,13 +104,6 @@ def fetch_market_prices(stocks: list[dict], now: datetime | None = None) -> dict
                         continue
                 if candidates:
                     previous_close = max(candidates, key=lambda item: item[0])[1]
-                else:
-                    try:
-                        valid = [float(v) for v in daily_frame["Close"].dropna().tolist() if float(v) > 0]
-                        if valid:
-                            previous_close = valid[-1]
-                    except (TypeError, ValueError):
-                        pass
 
             # Never alert from an old intraday candle.
             if latest_at and now - latest_at <= timedelta(minutes=MAX_DATA_AGE_MINUTES):
@@ -219,6 +212,20 @@ def scan_once(database, now: datetime | None = None, fetcher=fetch_market_prices
         if market.get("previous_close"):
             update_fields["previous_close"] = float(market["previous_close"])
         database.stocks.update_one({"_id": stock_id}, {"$set": update_fields})
+        # Persist price points for the user's live chart; history-write failures
+        # must not prevent alert evaluation.
+        try:
+            database.price_history.insert_one({
+                "user_id": stock["user_id"],
+                "stock_id": str(stock_id),
+                "symbol": stock["symbol"],
+                "exchange": stock.get("exchange", "NSE"),
+                "price": price,
+                "timestamp": market["timestamp"].isoformat(),
+                "source": market.get("source", DATA_SOURCE),
+            })
+        except Exception:
+            pass
 
         sell_signal = None
         if previous_close:
