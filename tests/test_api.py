@@ -49,11 +49,11 @@ def test_portfolio_limit_and_duplicate(database):
     assert first.status_code == 201
     assert client.post('/api/stocks', headers=headers, json={'symbol':'ABC','exchange':'NSE'}).status_code == 409
     assert database.users.find_one({'email':'limit@example.com'})['stock_count'] == 1
-    for i in range(1, 40):
+    for i in range(1, 60):
         response = client.post('/api/stocks', headers=headers, json={'symbol':f'S{i}','exchange':'BSE'})
         assert response.status_code == 201
-    assert len(client.get('/api/stocks', headers=headers).json()) == 40
-    assert database.users.find_one({'email':'limit@example.com'})['stock_count'] == 40
+    assert len(client.get('/api/stocks', headers=headers).json()) == 60
+    assert database.users.find_one({'email':'limit@example.com'})['stock_count'] == 60
     assert client.post('/api/stocks', headers=headers, json={'symbol':'EXTRA','exchange':'NSE'}).status_code == 400
 
 def test_invalid_or_missing_auth_is_rejected(database):
