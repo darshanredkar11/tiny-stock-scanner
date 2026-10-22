@@ -21,4 +21,6 @@ jobs:
       - name: Install Chromium
         run: python -m playwright install --with-deps chromium
       - name: Run tests
-        run: pytest -q
+        run: python -m pytest -q
+      - name: Compile application
+        run: python -m compileall -q app
