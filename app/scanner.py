@@ -258,6 +258,23 @@ def scan_once(database, now: datetime | None = None, fetcher=fetch_market_prices
     buyback_window = _market_window(now, (9, 15), (15, 30))
 
     for stock in stocks:
+        # Clear the prior session's recorded sale at the first scan of a new IST date.
+        sale_date = stock.get("actual_sell_price_date")
+        if stock.get("actual_sell_price") is not None and sale_date != now.date().isoformat():
+            database.stocks.update_one(
+                {"_id": stock["_id"]},
+                {"$set": {"actual_sell_price": None, "actual_sell_price_date": now.date().isoformat(),
+                          "buyback_alert_active": False}},
+            )
+            stock["actual_sell_price"] = None
+            stock["actual_sell_price_date"] = now.date().isoformat()
+        elif sale_date != now.date().isoformat():
+            database.stocks.update_one(
+                {"_id": stock["_id"]},
+                {"$set": {"actual_sell_price_date": now.date().isoformat(), "buyback_alert_active": False}},
+            )
+            stock["actual_sell_price_date"] = now.date().isoformat()
+
         key = (stock.get("exchange", "NSE"), stock["symbol"].upper())
         market = prices.get(key)
         if not market:
