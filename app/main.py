@@ -4,6 +4,8 @@ import hmac
 import base64
 import json
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import threading
 import logging
 from typing import Optional
@@ -129,6 +131,7 @@ class StockInput(BaseModel):
     symbol: str = Field(min_length=1, max_length=24, pattern=r"^[A-Za-z0-9&._-]+$")
     exchange: str = Field(pattern=r"^(NSE|BSE)$")
     purchase_price: float | None = Field(default=None, gt=0)
+    purchase_quantity: float | None = Field(default=None, gt=0)
     previous_close: float | None = Field(default=None, gt=0)
     resistance: float | None = Field(default=None, gt=0)
 
@@ -187,20 +190,21 @@ def add_stock(body: StockInput, authorization: Optional[str] = Header(default=No
     user_id = current_user(authorization)
     database = get_db()
     reserved = database.users.update_one(
-        {"_id": ObjectId(user_id), "stock_count": {"$lt": 40}},
+        {"_id": ObjectId(user_id), "stock_count": {"$lt": 60}},
         {"$inc": {"stock_count": 1}},
     )
     if reserved.modified_count != 1:
         user = database.users.find_one({"_id": ObjectId(user_id)}, {"_id": 1})
         if not user:
             raise HTTPException(401, "User account no longer exists")
-        raise HTTPException(400, "Maximum 40 stocks per user")
+        raise HTTPException(400, "Maximum 60 stocks per user")
     symbol = body.symbol.upper()
     document = {
         "user_id": user_id,
         "symbol": symbol,
         "exchange": body.exchange,
         "purchase_price": body.purchase_price,
+        "purchase_quantity": body.purchase_quantity,
         "previous_close": body.previous_close,
         "resistance": body.resistance,
         "actual_sell_price": None,
@@ -240,7 +244,9 @@ def record_sale(stock_id: str, body: SaleInput, authorization: Optional[str] = H
     database = get_db()
     result = database.stocks.update_one(
         {"_id": object_id, "user_id": user_id},
-        {"$set": {"actual_sell_price": body.actual_sell_price, "buyback_alert_active": False}},
+        {"$set": {"actual_sell_price": round(body.actual_sell_price, 2),
+                  "actual_sell_price_date": datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat(),
+                  "buyback_alert_active": False}},
     )
     if result.matched_count == 0:
         raise HTTPException(404, "Stock not found")
