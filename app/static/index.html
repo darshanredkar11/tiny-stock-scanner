@@ -24,12 +24,13 @@
 <div><label for="symbol">Symbol</label><input id="symbol" maxlength="24" placeholder="RELIANCE"></div>
 <div><label for="exchange">Exchange</label><select id="exchange"><option>NSE</option><option>BSE</option></select></div>
 <div><label for="purchase">Purchase price (optional)</label><input id="purchase" type="number" min="0" step="0.01" placeholder="e.g. 1250"></div>
+<div><label for="quantity">Purchase quantity (optional)</label><input id="quantity" type="number" min="0.0001" step="any" placeholder="e.g. 100"></div>
 <div><label for="previous">Previous close (optional)</label><input id="previous" type="number" min="0" step="0.01" placeholder="e.g. 1230"></div>
 <div><label for="resistance">Resistance (optional)</label><input id="resistance" type="number" min="0" step="0.01" placeholder="e.g. 1280"></div>
 </div>
-<div class="actions" style="margin-top:14px"><button id="addBtn">Add to watchlist</button><span class="muted" id="countText">0 / 40 stocks</span></div><div id="stockStatus" class="status" role="status"></div>
+<div class="actions" style="margin-top:14px"><button id="addBtn">Add to watchlist</button><span class="muted" id="countText">0 / 60 stocks</span></div><div id="stockStatus" class="status" role="status"></div>
 </div>
-<div class="panel"><h2>Your watchlist</h2><div class="tablewrap"><table><thead><tr><th>Symbol</th><th>Exchange</th><th>Market price</th><th>Price time</th><th>Buy price</th><th>Previous close</th><th>Resistance</th><th>Recorded sell price</th><th>Actions</th></tr></thead><tbody id="stocksBody"></tbody></table></div><p id="emptyText" class="muted">Your watchlist is empty. Add a stock above.</p></div>
+<div class="panel"><h2>Your watchlist</h2><div class="tablewrap"><table><thead><tr><th>Symbol</th><th>Exchange</th><th>Market price</th><th>Price time</th><th>Buy price</th><th>Buy quantity</th><th>Previous close</th><th>Resistance</th><th>Recorded sell price</th><th>Actions</th></tr></thead><tbody id="stocksBody"></tbody></table></div><p id="emptyText" class="muted">Your watchlist is empty. Add a stock above.</p></div>
 <div class="panel"><h2>Live price graph</h2><div class="actions" style="margin-bottom:12px"><label for="chartSymbol" style="margin:0">Stock</label><select id="chartSymbol" style="max-width:220px"></select><span class="muted">Refreshes every 30 seconds · history starts accumulating after deployment</span></div><div class="tablewrap"><svg id="priceChart" viewBox="0 0 900 300" role="img" aria-label="Live stock price chart" style="width:100%;min-width:320px;height:auto;display:block;background:#0c1525;border-radius:10px"></svg></div><p id="chartStatus" class="muted">Waiting for price history…</p></div>
 <div class="panel"><h2>Recent alerts (market session until 3:30 PM IST)</h2><ul id="alertsList"></ul><p id="alertsEmpty" class="muted">No alerts yet. The scanner will list any triggered signals here.</p></div>
 <div class="panel"><h2>Scanner status</h2><p id="marketStatus" class="muted" role="status">Waiting for scanner status…</p><p id="marketDetails" class="muted"></p></div>
@@ -76,19 +77,19 @@ function numOrNull(id){const v=$(id).value;return v===''?null:Number(v);}
 $('addBtn').onclick=async()=>{
  const symbol=$('symbol').value.trim().toUpperCase();
  if(!symbol){showStatus('stockStatus','Enter a stock symbol.',true);return;}
- const payload={symbol,exchange:$('exchange').value,purchase_price:numOrNull('purchase'),previous_close:numOrNull('previous'),resistance:numOrNull('resistance')};
+ const payload={symbol,exchange:$('exchange').value,purchase_price:numOrNull('purchase'),purchase_quantity:numOrNull('quantity'),previous_close:numOrNull('previous'),resistance:numOrNull('resistance')};
  $('addBtn').disabled=true;
- try{await api('/api/stocks',{method:'POST',body:JSON.stringify(payload)});['symbol','purchase','previous','resistance'].forEach(id=>$(id).value='');showStatus('stockStatus','Stock added.');await loadStocks();}
+ try{await api('/api/stocks',{method:'POST',body:JSON.stringify(payload)});['symbol','purchase','quantity','previous','resistance'].forEach(id=>$(id).value='');showStatus('stockStatus','Stock added.');await loadStocks();}
  catch(e){showStatus('stockStatus',e.message,true);}finally{$('addBtn').disabled=false;}
 };
 async function loadStocks(){
  try{
   const stocks=await api('/api/stocks');$('stocksBody').replaceChildren();
-  $('emptyText').classList.toggle('hidden',stocks.length>0);$('countText').textContent=stocks.length+' / 40 stocks';
+  $('emptyText').classList.toggle('hidden',stocks.length>0);$('countText').textContent=stocks.length+' / 60 stocks';
   for(const stock of stocks){
    const tr=document.createElement('tr');
    const priceTime=stock.market_price_at?new Date(stock.market_price_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
-   const vals=[stock.symbol,stock.exchange,stock.market_price==null?'—':Number(stock.market_price).toFixed(2),priceTime,stock.purchase_price??'—',stock.previous_close??'—',stock.resistance??'—',stock.actual_sell_price??'—'];
+   const vals=[stock.symbol,stock.exchange,stock.market_price==null?'—':Number(stock.market_price).toFixed(2),priceTime,stock.purchase_price==null?'—':Number(stock.purchase_price).toFixed(2),stock.purchase_quantity??'—',stock.previous_close==null?'—':Number(stock.previous_close).toFixed(2),stock.resistance==null?'—':Number(stock.resistance).toFixed(2),stock.actual_sell_price==null?'—':Number(stock.actual_sell_price).toFixed(2)];
    for(const value of vals){const td=document.createElement('td');td.textContent=value;tr.appendChild(td);}
    const actions=document.createElement('td'), input=document.createElement('input'), save=document.createElement('button'), del=document.createElement('button');
    input.type='number';input.min='0.01';input.step='0.01';input.placeholder='Actual sell price';input.setAttribute('aria-label','Actual sell price for '+stock.symbol);input.style.width='130px';
