@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo
 
 import mongomock
 
-from app.scanner import scan_once, yahoo_symbol
+from app.scanner import _chart_api_fallback, scan_once, yahoo_symbol
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -82,3 +82,40 @@ def test_scanner_alerts_after_old_morning_cutoff_until_market_close():
     )
     assert result["alerts_created"] == 1
     assert database.alerts.count_documents({}) == 1
+
+
+
+def test_chart_api_fallback_uses_fresh_today_candle_and_prior_day_close(monkeypatch):
+    import app.scanner as scanner
+
+    now = datetime(2026, 10, 20, 10, 0, tzinfo=IST)
+    stamps = [
+        int(datetime(2026, 10, 19, 15, 29, tzinfo=IST).timestamp()),
+        int(datetime(2026, 10, 20, 9, 59, tzinfo=IST).timestamp()),
+    ]
+
+    class Response:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"chart": {"result": [{
+                "timestamp": stamps,
+                "indicators": {"quote": [{"close": [100.0, 102.5]}]},
+            }]}}
+
+    calls = []
+    def fake_get(url, **kwargs):
+        calls.append(url)
+        return Response()
+
+    monkeypatch.setattr(scanner.requests, "get", fake_get)
+    result = _chart_api_fallback("RELIANCE.NS", now)
+
+    assert result is not None
+    assert result["price"] == 102.5
+    assert result["previous_close"] == 100.0
+    assert result["timestamp"] == datetime(2026, 10, 20, 9, 59, tzinfo=IST)
+    assert "query1.finance.yahoo.com" in calls[0]
