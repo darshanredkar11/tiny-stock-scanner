@@ -44,6 +44,59 @@ def _timestamp(value) -> datetime:
     return stamp.astimezone(IST)
 
 
+def _chart_api_fallback(ticker: str, now: datetime) -> dict | None:
+    """Read Yahoo's public chart endpoint, which does not require the quote API crumb."""
+    params = {"range": "5d", "interval": "1m", "includePrePost": "false"}
+    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36"}
+    payload = None
+    for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
+        try:
+            response = requests.get(
+                f"https://{host}/v8/finance/chart/{ticker}",
+                params=params, headers=headers, timeout=8,
+            )
+            if response.status_code == 429:
+                continue
+            response.raise_for_status()
+            candidate = response.json().get("chart", {})
+            if candidate.get("result"):
+                payload = candidate["result"][0]
+                break
+        except (requests.RequestException, ValueError, TypeError):
+            continue
+    if not payload:
+        return None
+
+    timestamps = payload.get("timestamp") or []
+    quote = ((payload.get("indicators") or {}).get("quote") or [{}])[0]
+    closes = quote.get("close") or []
+    latest_at, latest_price, previous_close = None, None, None
+    for epoch, raw_close in zip(timestamps, closes):
+        try:
+            if raw_close is None:
+                continue
+            close = float(raw_close)
+            stamp = datetime.fromtimestamp(epoch, IST)
+            if close <= 0:
+                continue
+            if stamp.date() < now.date():
+                if previous_close is None or stamp.date() > previous_close[0]:
+                    previous_close = (stamp.date(), close)
+            elif stamp.date() == now.date() and (latest_at is None or stamp > latest_at):
+                latest_at, latest_price = stamp, close
+        except (TypeError, ValueError, OSError, OverflowError):
+            continue
+
+    if latest_at and latest_price and now - latest_at <= timedelta(minutes=MAX_DATA_AGE_MINUTES):
+        return {
+            "price": latest_price,
+            "previous_close": previous_close[1] if previous_close else None,
+            "timestamp": latest_at,
+            "source": "Yahoo Finance chart endpoint (public feed; may be delayed)",
+        }
+    return None
+
+
 def fetch_market_prices(stocks: list[dict], now: datetime | None = None) -> dict:
     """Batch-fetch today's 1-minute prices and the latest completed prior close."""
     if not stocks:
@@ -105,8 +158,17 @@ def fetch_market_prices(stocks: list[dict], now: datetime | None = None) -> dict
                 if candidates:
                     previous_close = max(candidates, key=lambda item: item[0])[1]
 
+            # If yfinance cannot produce a usable candle (e.g. crumb/session
+            # trouble for one ticker), isolate that symbol through Yahoo's chart API.
+            if not latest_at or latest_price is None or now - latest_at > timedelta(minutes=MAX_DATA_AGE_MINUTES) or previous_close is None:
+                fallback = _chart_api_fallback(ticker, now)
+                if fallback:
+                    stock = ticker_to_stock[ticker]
+                    prices[(stock.get("exchange", "NSE"), stock["symbol"].upper())] = fallback
+                    continue
+
             # Never alert from an old intraday candle.
-            if latest_at and now - latest_at <= timedelta(minutes=MAX_DATA_AGE_MINUTES):
+            if latest_at and latest_price is not None and now - latest_at <= timedelta(minutes=MAX_DATA_AGE_MINUTES):
                 stock = ticker_to_stock[ticker]
                 prices[(stock.get("exchange", "NSE"), stock["symbol"].upper())] = {
                     "price": latest_price,
