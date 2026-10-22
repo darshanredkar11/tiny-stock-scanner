@@ -119,3 +119,43 @@ def test_chart_api_fallback_uses_fresh_today_candle_and_prior_day_close(monkeypa
     assert result["previous_close"] == 100.0
     assert result["timestamp"] == datetime(2026, 10, 20, 9, 59, tzinfo=IST)
     assert "query1.finance.yahoo.com" in calls[0]
+
+
+
+def test_previous_close_sell_alert_triggers_even_below_purchase_price():
+    database = mongomock.MongoClient()["tss"]
+    database.stocks.insert_one({
+        "user_id": "user-1", "symbol": "LAMBDH", "exchange": "NSE",
+        "purchase_price": 110.0, "previous_close": 100.0, "resistance": None,
+        "actual_sell_price": None, "sell_alert_active": False, "buyback_alert_active": False,
+    })
+    now = datetime(2026, 10, 22, 10, 6, tzinfo=IST)
+    prices = {("NSE", "LAMBDH"): {
+        "price": 103.0, "previous_close": 100.0, "timestamp": now, "source": "test",
+    }}
+    result = scan_once(database, now=now, fetcher=lambda stocks, now=None: prices,
+                       notifier=lambda message: "sent")
+    assert result["alerts_created"] == 1
+    alert = database.alerts.find_one({"symbol": "LAMBDH"})
+    assert alert["reason"] == "at least 2% above previous close"
+    assert alert["price"] == 103.0
+
+
+def test_recorded_sale_is_cleared_on_new_day():
+    database = mongomock.MongoClient()["tss"]
+    database.stocks.insert_one({
+        "user_id": "user-1", "symbol": "RELIANCE", "exchange": "NSE",
+        "purchase_price": 100.0, "previous_close": 100.0, "resistance": None,
+        "actual_sell_price": 105.0, "actual_sell_price_date": "2026-10-21",
+        "sell_alert_active": False, "buyback_alert_active": True,
+    })
+    now = datetime(2026, 10, 22, 9, 20, tzinfo=IST)
+    prices = {("NSE", "RELIANCE"): {
+        "price": 100.0, "previous_close": 99.0, "timestamp": now, "source": "test",
+    }}
+    scan_once(database, now=now, fetcher=lambda stocks, now=None: prices,
+              notifier=lambda message: "sent")
+    stock = database.stocks.find_one({"symbol": "RELIANCE"})
+    assert stock["actual_sell_price"] is None
+    assert stock["actual_sell_price_date"] == "2026-10-22"
+    assert stock["buyback_alert_active"] is False
