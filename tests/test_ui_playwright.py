@@ -67,8 +67,8 @@ def fake_api(page: Page):
             return
         if path == "/api/stocks" and method == "POST":
             symbol = payload.get("symbol", "").upper()
-            if len(state["stocks"]) >= 40:
-                route.fulfill(status=400, json={"detail": "Maximum 40 stocks per user"})
+            if len(state["stocks"]) >= 60:
+                route.fulfill(status=400, json={"detail": "Maximum 60 stocks per user"})
                 return
             if any(s["symbol"] == symbol and s["exchange"] == payload.get("exchange")
                    for s in state["stocks"]):
@@ -149,7 +149,7 @@ def test_register_add_stock_and_show_scanner_status(page: Page, dashboard_url: s
     expect(page.locator("#stocksBody")).to_contain_text("RELIANCE")
     expect(page.locator("#stocksBody")).to_contain_text("NSE")
     expect(page.locator("#stocksBody")).to_contain_text("123.45")
-    expect(page.locator("#countText")).to_have_text("1 / 40 stocks")
+    expect(page.locator("#countText")).to_have_text("1 / 60 stocks")
     expect(page.locator("#marketStatus")).to_contain_text("OK")
     expect(page.locator("#marketDetails")).to_contain_text("Mock market feed")
     expect(page.locator("#emptyText")).to_be_hidden()
