@@ -1,51 +1,7 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tiny Stock Scanner · Showcase</title>
-<style>
-:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:#152238;background:#f4f7fb;font-synthesis:none}
-*{box-sizing:border-box}body{margin:0}header{background:#101a2b;color:#edf5ff;padding:18px max(20px,calc((100% - 1080px)/2));display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:1px solid #263650}header strong{font-size:18px}header a{color:#d7eaff;text-decoration:none;font-size:13px}.wrap{max-width:1080px;margin:28px auto;padding:0 20px}.hero{border-radius:22px;padding:30px;background:linear-gradient(130deg,#101a2b,#1d3955);color:#f2f7ff}.eyebrow{text-transform:uppercase;letter-spacing:.15em;font-size:11px;color:#9bc8f1;font-weight:800}.hero h1{font-size:clamp(28px,5vw,42px);line-height:1.1;margin:10px 0}.hero p{color:#c4d4e7;max-width:670px;line-height:1.6;margin-bottom:0}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:16px 0}.metric,.panel{background:white;border:1px solid #dce5ef;border-radius:15px;padding:19px;box-shadow:0 5px 20px #07101f0a}.metric span{display:block;font-size:12px;color:#64748b}.metric strong{display:block;font-size:29px;margin:7px 0}.metric small{color:#64748b}.panel h2{font-size:19px;margin:0 0 6px}.sub{color:#64748b;font-size:13px;margin:0 0 16px;line-height:1.5}.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:13px 11px;border-bottom:1px solid #e6edf5;font-size:13px}th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#64748b}.positive{color:#16794b;font-weight:800}.tag{display:inline-block;padding:5px 8px;border-radius:99px;background:#e7f7ee;color:#16794b;font-size:11px;font-weight:800}.notice{background:#fff8e8;border:1px solid #f3dfb4;border-radius:12px;padding:13px 15px;color:#77521a;font-size:12px;line-height:1.6;margin-top:14px}.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.btn{display:inline-block;text-decoration:none;background:#c6e4ff;color:#11233a;font-weight:800;border-radius:9px;padding:12px 16px}.btn.alt{background:#fff;color:#1a3550;border:1px solid #cfdeed}footer{text-align:center;color:#64748b;font-size:12px;padding:25px 12px 35px}@media(max-width:650px){.metrics{grid-template-columns:1fr}.hero{padding:23px}.wrap{margin:18px auto;padding:0 13px}.metric{padding:15px}}
-</style>
-</head>
-<body>
-<header><strong>◈ Tiny Stock Scanner</strong><a href="/">Open scanner dashboard ↗</a></header>
-<main class="wrap">
-<section class="hero">
-<div class="eyebrow">NSE · BSE · Signal monitoring</div>
-<h1>See the signal.<br>Make the decision.</h1>
-<p>Tiny Stock Scanner monitors your watchlist and surfaces sell and buy-back alerts. Review the signal, decide for yourself, and place trades through your own broker.</p>
-<div class="cta"><a class="btn" href="/">Try the scanner</a><a class="btn alt" href="https://github.com/darshanredkar11/tiny-stock-scanner">View project on GitHub</a></div>
-</section>
-<section class="metrics" aria-label="Product metrics">
-<div class="metric"><span>Onboarded accounts</span><strong id="users">—</strong><small id="userCaption">Loading live count…</small></div>
-<div class="metric"><span>Signals</span><strong>SELL + BUY-BACK</strong><small>Rule-based alerts</small></div>
-<div class="metric"><span>Order placement</span><strong>Manual</strong><small>No broker credentials or auto-trading</small></div>
-</section>
-<section class="panel">
-<h2>What a signal could look like</h2>
-<p class="sub">Three simple, hypothetical examples using round numbers to explain the calculation—not actual customer results or verified historical trades.</p>
-<div class="tablewrap"><table>
-<thead><tr><th>Example</th><th>Signal scenario</th><th>Reference price</th><th>Alert / action price</th><th>Illustrative quantity</th><th>Potential gross difference</th></tr></thead>
-<tbody>
-<tr><td>01</td><td><span class="tag">SELL</span> 2% move</td><td>₹100.00</td><td>₹102.00</td><td>50 shares</td><td class="positive">+₹100</td></tr>
-<tr><td>02</td><td><span class="tag">SELL</span> 2% move</td><td>₹250.00</td><td>₹255.00</td><td>20 shares</td><td class="positive">+₹100</td></tr>
-<tr><td>03</td><td><span class="tag">BUY-BACK</span> 1% below sale</td><td>Sold at ₹500.00</td><td>Re-entry at ₹495.00</td><td>20 shares</td><td class="positive">₹100 lower re-entry cost</td></tr>
-</tbody></table></div>
-<div class="notice"><strong>Important:</strong> These are illustrative calculations, not real users, trades, returns, or a performance track record. Example 1–2 assume the reference price was the effective entry price and the alert price was the effective sale price. Example 3 shows a lower re-entry cost versus buying back at the sale price; total trading profit depends on the original purchase price. Brokerage, taxes, spread, slippage, execution timing, and delayed or missing public market data can reduce or eliminate gains. Alerts do not guarantee execution or profit.</div>
-</section>
-<section class="panel" style="margin-top:16px">
-<h2>Built for a clear workflow</h2>
-<div class="tablewrap"><table><tbody>
-<tr><td><strong>1. Add a watchlist</strong></td><td>Track NSE/BSE symbols and optional purchase details.</td></tr>
-<tr><td><strong>2. Receive an alert</strong></td><td>See a sell or buy-back signal when configured rules trigger.</td></tr>
-<tr><td><strong>3. Decide and execute</strong></td><td>Verify the market price and place any order yourself through your broker.</td></tr>
-</tbody></table></div>
-<p class="sub" style="margin:14px 0 0">Market data comes from a public Yahoo Finance feed and may be delayed, incomplete, or rate-limited. This is an alerting tool, not investment advice.</p>
-</section>
-</main>
-<footer>Tiny Stock Scanner · Public product showcase · Educational examples only</footer>
-<script>
-(async()=>{try{const r=await fetch('/api/public/showcase');if(!r.ok)throw new Error('count unavailable');const d=await r.json();document.getElementById('users').textContent=Number(d.onboarded_users).toLocaleString('en-IN');document.getElementById('userCaption').textContent='Registered accounts in the app database';}catch(e){document.getElementById('users').textContent='—';document.getElementById('userCaption').textContent='Live count temporarily unavailable';}})();
-</script>
-</body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tiny Stock Scanner · Public Showcase</title><style>
+:root{font-family:Inter,system-ui,sans-serif;color:#edf4ff;background:#09111e}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0%,#1b3955,transparent 45%),#09111e}.wrap{max-width:1050px;margin:auto;padding:24px 18px 44px}.nav{display:flex;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid #263b53}.nav a{color:#b9dafa;text-decoration:none}.hero{padding:40px 0 20px}.eyebrow{color:#8cc9ff;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.hero h1{font-size:clamp(32px,6vw,54px);line-height:1.04;margin:12px 0}.hero p,.sub{color:#a9bbd0;line-height:1.65;max-width:720px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0}.stat,.panel{background:#111f31;border:1px solid #263b53;border-radius:15px;padding:19px}.stat small{color:#a8bad0}.stat strong{display:block;font-size:clamp(27px,4vw,38px);margin:9px 0}.stat em{font-style:normal;color:#7fd8b1;font-size:12px}.panel h2{margin:0 0 7px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:640px}th,td{text-align:left;padding:13px 10px;border-bottom:1px solid #26364a;font-size:13px}th{color:#91a8c3}.gain{color:#7fe0b4;font-weight:800}.tag{border:1px solid #35516d;border-radius:99px;padding:5px 8px;font-size:11px;color:#b9dafa}.note{border-left:3px solid #e8b76a;background:#251f18;color:#d9c8a8;padding:12px 14px;border-radius:0 9px 9px 0;font-size:12px;line-height:1.6;margin-top:16px}.btn{display:inline-block;margin-top:10px;padding:11px 15px;background:#c7e7ff;color:#0b2034;border-radius:9px;text-decoration:none;font-weight:800}.foot{color:#7f94ac;font-size:12px;line-height:1.7;margin-top:20px}@media(max-width:650px){.stats{grid-template-columns:1fr}.wrap{padding:18px 13px}.panel{padding:14px}}
+</style></head><body><main class="wrap"><nav class="nav"><strong>tiny<span style="color:#8cc9ff">stock</span> scanner</strong><a href="/">Open scanner ↗</a></nav>
+<section class="hero"><div class="eyebrow">Public product snapshot · NSE / BSE</div><h1>Market signals.<br>Clear decisions.</h1><p>A lightweight watchlist monitor that surfaces sell and buy-back signals. No broker login, no automatic trades — alerts to help you evaluate and decide.</p><a class="btn" href="/">Explore the app →</a></section>
+<section class="stats"><div class="stat"><small>Onboarded accounts</small><strong id="users">—</strong><em>Live count from registered accounts</em></div><div class="stat"><small>Stocks in watchlists</small><strong id="stocks">—</strong><em>Across all accounts</em></div><div class="stat"><small>Alerts recorded</small><strong id="alerts">—</strong><em>Saved signals in the app</em></div></section>
+<section class="panel"><h2>What a signal scenario can look like</h2><p class="sub">Illustrative arithmetic examples only — not real users, executed trades, or verified customer returns.</p><div class="tablewrap"><table><thead><tr><th>Example</th><th>Scenario</th><th>Reference</th><th>Action price</th><th>Quantity</th><th>Gross difference</th></tr></thead><tbody><tr><td><span class="tag">01</span></td><td>Sell after +2% move</td><td>₹500.00</td><td>₹510.00</td><td>10</td><td class="gain">+₹100.00</td></tr><tr><td><span class="tag">02</span></td><td>Sell after +2% move</td><td>₹240.00</td><td>₹244.80</td><td>25</td><td class="gain">+₹120.00</td></tr><tr><td><span class="tag">03</span></td><td>Buy back 1% below sale</td><td>Sold ₹800.00</td><td>Rebuy ₹792.00</td><td>10</td><td class="gain">₹80.00 lower re-entry cost</td></tr></tbody></table></div><div class="note"><strong>Important:</strong> Hypothetical examples, not actual customer outcomes or a performance track record. Excludes brokerage, taxes, spread and slippage. Actual execution, delayed/missing data, and market moves can reduce or eliminate gains. Alerts do not guarantee returns.</div></section><p class="foot">Live counts come from the app database. Market data uses a public Yahoo Finance feed and may be delayed, incomplete or rate-limited. Alert-only product; no orders are placed.<br><span id="updated">Loading live metrics…</span></p></main>
+<script>(async()=>{try{const r=await fetch('/api/showcase/stats');if(!r.ok)throw Error();const d=await r.json();[['users','onboarded_users'],['stocks','stocks_tracked'],['alerts','alerts_generated']].forEach(([id,key])=>document.getElementById(id).textContent=Number(d[key]||0).toLocaleString('en-IN'));document.getElementById('updated').textContent='Updated '+new Date(d.updated_at).toLocaleString('en-IN')+' IST';}catch(e){document.getElementById('updated').textContent='Live metrics temporarily unavailable; refresh later.';}})();</script></body></html>
