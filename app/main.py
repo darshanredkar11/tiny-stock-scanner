@@ -134,6 +134,10 @@ class StockInput(BaseModel):
     purchase_quantity: float | None = Field(default=None, gt=0)
     previous_close: float | None = Field(default=None, gt=0)
     resistance: float | None = Field(default=None, gt=0)
+    sell_target_percent: float = Field(default=2.0, ge=0.1, le=50)
+
+class SellTargetInput(BaseModel):
+    sell_target_percent: float = Field(ge=0.1, le=50)
 
 class SaleInput(BaseModel):
     actual_sell_price: float = Field(gt=0)
@@ -207,6 +211,7 @@ def add_stock(body: StockInput, authorization: Optional[str] = Header(default=No
         "purchase_quantity": body.purchase_quantity,
         "previous_close": body.previous_close,
         "resistance": body.resistance,
+        "sell_target_percent": body.sell_target_percent,
         "actual_sell_price": None,
         "sell_alert_active": False,
         "buyback_alert_active": False,
@@ -220,6 +225,23 @@ def add_stock(body: StockInput, authorization: Optional[str] = Header(default=No
         database.users.update_one({"_id": ObjectId(user_id)}, {"$inc": {"stock_count": -1}})
         raise
     return {"id": str(result.inserted_id), "symbol": symbol, "exchange": body.exchange}
+
+@app.patch("/api/stocks/{stock_id}/settings")
+def update_stock_settings(stock_id: str, body: SellTargetInput, authorization: Optional[str] = Header(default=None)):
+    user_id = current_user(authorization)
+    try:
+        object_id = ObjectId(stock_id)
+    except Exception:
+        raise HTTPException(404, "Stock not found")
+    database = get_db()
+    result = database.stocks.update_one(
+        {"_id": object_id, "user_id": user_id},
+        {"$set": {"sell_target_percent": body.sell_target_percent}},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(404, "Stock not found")
+    return {"stock_id": stock_id, "sell_target_percent": body.sell_target_percent, "status": "updated"}
+
 
 @app.delete("/api/stocks/{stock_id}", status_code=204)
 def delete_stock(stock_id: str, authorization: Optional[str] = Header(default=None)):
