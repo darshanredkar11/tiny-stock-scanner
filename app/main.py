@@ -83,6 +83,20 @@ def dashboard():
 def public_showcase():
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "showcase.html"))
 
+@app.get("/api/showcase/stats")
+def public_showcase_stats():
+    database = get_db()
+    return {
+        "onboarded_users": database.users.count_documents({}),
+        "stocks_tracked": database.stocks.count_documents({}),
+        "alerts_generated": database.alerts.count_documents({}),
+        "updated_at": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+    }
+
+@app.get("/showcase", include_in_schema=False)
+def public_showcase():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "static", "showcase.html"))
+
 @app.get("/api/public/showcase")
 def public_showcase_stats():
     database = get_db()
