@@ -122,10 +122,6 @@ def public_showcase_stats():
 
 
 def _compute_public_showcase_alert_outcomes():
-
-
-@app.get("/api/public/showcase/alert-outcomes")
-def public_showcase_alert_outcomes():
     """Public, anonymized simulations calculated from real stored SELL alerts and price history."""
     database = get_db()
     alerts = list(database.alerts.find({"action": "SELL"}).sort("created_at", -1).limit(100))
