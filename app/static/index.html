@@ -45,7 +45,7 @@
   </div>
   <h2>Recorded SELL alerts — row-by-row simulation</h2>
   <p class="muted">Gross sale P/L compares the recorded SELL alert price with the currently configured purchase price × quantity. Buy-back saving uses the first recorded same-day price at least 1% below the SELL signal, where available. Missing values are shown as unavailable, not guessed.</p>
-  <div class="tablewrap"><table><thead><tr><th>Account</th><th>Alert time (IST)</th><th>Stock</th><th>SELL signal</th><th>Configured buy price</th><th>Quantity</th><th>Gross sale P/L</th><th>Simulated buy-back</th><th>Buy-back saving</th><th>Price-history result</th></tr></thead><tbody id="publicOutcomes"><tr><td colspan="10" class="muted">Loading recorded alerts…</td></tr></tbody></table></div>
+  <div class="tablewrap"><table><thead><tr><th>Account</th><th>Alert time (IST)</th><th>Stock</th><th>SELL signal</th><th>Configured buy price</th><th>Quantity</th><th>Gross sale P/L</th><th>Simulated buy-back</th><th>Buy-back saving</th><th>Price-history result</th></tr></thead><tbody id="publicOutcomes"><tr><td colspan="10" class="muted">Loading recorded alerts… (usually a few seconds)</td></tr></tbody></table></div>
   <div class="notice" style="margin-top:16px"><strong>Important:</strong> Real alert records; simulated calculations, not proof of trades or net profits. Current purchase settings may differ from settings at alert time. Excludes brokerage, taxes, spread, slippage and partial fills. Public market data can be delayed or incomplete, so an unobserved buy-back price is not proof the price never occurred.</div>
   <p id="publicUpdated" class="muted" aria-live="polite">Loading live metrics…</p>
 </section>
@@ -110,7 +110,12 @@ const showStatus = (id, message, error=false) => { const el=$(id); el.textConten
 async function api(path, options={}) {
   const headers = {'Content-Type':'application/json', ...(options.headers||{})};
   if(token) headers.Authorization='Bearer '+token;
-  const response=await fetch(path,{...options,headers});
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),12000);
+  let response;
+  try{response=await fetch(path,{...options,headers,signal:controller.signal});}
+  catch(e){if(e.name==='AbortError')throw new Error('Request timed out after 12 seconds. Please retry.');throw e;}
+  finally{clearTimeout(timeout);}
   if(response.status===204) return null;
   const data=await response.json().catch(()=>({detail:'Unexpected server response'}));
   if(!response.ok){
@@ -256,9 +261,13 @@ async function loadPublicShowcase(){
  const time=value=>{if(!value)return '—';const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toLocaleString('en-IN',{timeZone:'Asia/Kolkata'});};
  const addCell=(tr,value,cls='')=>{const td=document.createElement('td');td.textContent=value;if(cls)td.className=cls;tr.appendChild(td);};
  try{
-  const [statsResponse,outcomeResponse]=await Promise.all([fetch('/api/showcase/stats'),fetch('/api/public/showcase/alert-outcomes')]);
-  if(!statsResponse.ok||!outcomeResponse.ok)throw new Error('Live alert data is temporarily unavailable.');
-  const stats=await statsResponse.json(), outcomes=await outcomeResponse.json();
+  const fetchPublic=async path=>{const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),12000);try{const response=await fetch(path,{signal:controller.signal,cache:'no-store'});if(!response.ok)throw new Error(path+' returned HTTP '+response.status);return await response.json();}catch(e){if(e.name==='AbortError')throw new Error('Server took more than 12 seconds to respond.');throw e;}finally{clearTimeout(timeout);}};
+  const [statsResult,outcomeResult]=await Promise.allSettled([fetchPublic('/api/showcase/stats'),fetchPublic('/api/public/showcase/alert-outcomes')]);
+  const stats=statsResult.status==='fulfilled'?statsResult.value:null;
+  const outcomes=outcomeResult.status==='fulfilled'?outcomeResult.value:null;
+  if(stats){[['publicUsers','onboarded_users'],['publicStocks','stocks_tracked'],['publicAlerts','alerts_generated']].forEach(([id,key])=>$(id).textContent=Number(stats[key]||0).toLocaleString('en-IN'));}
+  if(!outcomes)throw new Error('Alert records could not load: '+(outcomeResult.reason?.message||'server unavailable'));
+  if(!stats) $('publicUpdated').textContent='Alert records loaded; summary metrics unavailable: '+(statsResult.reason?.message||'server unavailable');
   [['publicUsers','onboarded_users'],['publicStocks','stocks_tracked'],['publicAlerts','alerts_generated']].forEach(([id,key])=>$(id).textContent=Number(stats[key]||0).toLocaleString('en-IN'));
   body.replaceChildren();
   if(!outcomes.rows||!outcomes.rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=10;td.className='muted';td.textContent='No recorded SELL alerts are available yet.';tr.appendChild(td);body.appendChild(tr);}
@@ -267,7 +276,7 @@ async function loadPublicShowcase(){
    addCell(tr,item.account||'Account');addCell(tr,time(item.alert_time));addCell(tr,(item.symbol||'—')+' ('+(item.exchange||'NSE')+')');addCell(tr,money(item.sell_signal_price));addCell(tr,money(item.configured_purchase_price));addCell(tr,qty(item.configured_quantity));addCell(tr,money(pnl),pnl===null?'':pnl>=0?'gain':'loss');addCell(tr,money(item.simulated_buyback_price));addCell(tr,money(saving),saving===null?'':saving>=0?'gain':'loss');addCell(tr,item.buyback_status||'—');body.appendChild(tr);
   });
   $('publicUpdated').textContent='Updated '+new Date(outcomes.updated_at||stats.updated_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST · '+(outcomes.rows||[]).length+' recorded SELL alerts';
- }catch(e){body.replaceChildren();const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=10;td.className='muted';td.textContent='Recorded alert data is temporarily unavailable. Please refresh later.';tr.appendChild(td);body.appendChild(tr);$('publicUpdated').textContent=e.message;}
+ }catch(e){body.replaceChildren();const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=10;td.className='muted';td.textContent='Could not load recorded alerts: '+e.message;tr.appendChild(td);body.appendChild(tr);$('publicUpdated').textContent='Data fetch failed. Use Retry to try again.';let retry=$('showcaseRetry');if(!retry){retry=document.createElement('button');retry.id='showcaseRetry';retry.type='button';retry.className='secondary';retry.textContent='Retry loading data';retry.style.marginTop='8px';$('publicUpdated').after(retry);}retry.onclick=()=>{retry.disabled=true;retry.textContent='Retrying…';loadPublicShowcase().finally(()=>{retry.disabled=false;retry.textContent='Retry loading data';});}}
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>showSection(button.dataset.section)));document.querySelectorAll('[data-go]').forEach(button=>button.addEventListener('click',()=>showSection(button.dataset.go)));function showSection(id){document.querySelectorAll('.page-section').forEach(section=>section.classList.toggle('hidden',section.id!==id));document.querySelectorAll('[data-section]').forEach(tab=>tab.classList.toggle('active',tab.dataset.section===id));} $('stockSearch').addEventListener('input',()=>{const query=$('stockSearch').value.trim().toLowerCase();document.querySelectorAll('#stocksBody tr').forEach(row=>row.classList.toggle('hidden',!row.dataset.search.includes(query)));});renderAuth();if(token)loadStocks();else loadPublicShowcase();setInterval(()=>{if(token)loadStocks();else loadPublicShowcase();},60000);
 </script>
