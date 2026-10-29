@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tiny Stock Scanner · Live Alert Outcomes</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#edf4ff;background:#09111e}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 85% 0%,#1b3955,transparent 45%),#09111e}
+.wrap{max-width:1200px;margin:auto;padding:24px 18px 44px}.nav{display:flex;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid #263b53}.nav a{color:#b9dafa;text-decoration:none}
+.hero{padding:40px 0 20px}.eyebrow{color:#8cc9ff;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.hero h1{font-size:clamp(32px,6vw,54px);line-height:1.04;margin:12px 0}.hero p,.sub{color:#a9bbd0;line-height:1.65;max-width:850px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0}.stat,.panel{background:#111f31;border:1px solid #263b53;border-radius:15px;padding:19px}.stat small{color:#a8bad0}.stat strong{display:block;font-size:clamp(27px,4vw,38px);margin:9px 0}.stat em{font-style:normal;color:#7fd8b1;font-size:12px}.panel h2{margin:0 0 7px}.tablewrap{overflow:auto;margin-top:15px}table{width:100%;border-collapse:collapse;min-width:1050px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid #26364a;font-size:12px;white-space:nowrap}th{color:#91a8c3;font-weight:700}.gain{color:#7fe0b4;font-weight:800}.loss{color:#ff9e9e;font-weight:800}.tag{border:1px solid #35516d;border-radius:99px;padding:5px 8px;font-size:11px;color:#b9dafa}.note{border-left:3px solid #e8b76a;background:#251f18;color:#d9c8a8;padding:12px 14px;border-radius:0 9px 9px 0;font-size:12px;line-height:1.6;margin-top:16px}.btn{display:inline-block;margin-top:10px;padding:11px 15px;background:#c7e7ff;color:#0b2034;border-radius:9px;text-decoration:none;font-weight:800}.foot{color:#7f94ac;font-size:12px;line-height:1.7;margin-top:20px}.empty{color:#a9bbd0;padding:20px 10px}.pill{display:inline-block;border:1px solid #35516d;border-radius:99px;padding:4px 7px;font-size:10px;color:#b9dafa}
+@media(max-width:650px){.stats{grid-template-columns:1fr}.wrap{padding:18px 13px}.panel{padding:14px}}
+</style></head>
+<body><main class="wrap">
+<nav class="nav"><strong>tiny<span style="color:#8cc9ff">stock</span> scanner</strong><a href="/">Open scanner ↗</a></nav>
+<section class="hero"><div class="eyebrow">Live product snapshot · NSE / BSE</div><h1>Real alerts.<br>Transparent calculations.</h1>
+<p>This table is calculated from the app’s stored SELL alerts and recorded market-price history. Each row is an actual alert record; the sell/buy-back results are simulations of what the configured quantity and recorded price path could imply, not evidence that anyone placed a trade.</p>
+<a class="btn" href="/">Explore the app →</a></section>
+<section class="stats">
+<div class="stat"><small>Onboarded accounts</small><strong id="users">—</strong><em>Live count from registered accounts</em></div>
+<div class="stat"><small>Stocks in watchlists</small><strong id="stocks">—</strong><em>Across all accounts</em></div>
+<div class="stat"><small>Alerts recorded</small><strong id="alerts">—</strong><em>Saved signals in the app</em></div>
+</section>
+<section class="panel"><h2>Recorded SELL alerts — row-by-row simulation</h2>
+<p class="sub">Newest 100 SELL alerts. “Gross sale P/L” compares the alert price with the current configured purchase price, multiplied by configured quantity. “Buy-back saving” uses the first recorded price at least 1% below the SELL alert later on the same trading day. Missing inputs or price points are shown as —, not guessed.</p>
+<div class="tablewrap"><table><thead><tr><th>Account</th><th>Alert time (IST)</th><th>Stock</th><th>SELL alert price</th><th>Configured purchase price</th><th>Quantity</th><th>Gross sale P/L</th><th>Simulated buy-back</th><th>Gross buy-back saving</th><th>Price-history result</th></tr></thead><tbody id="outcomes"><tr><td colspan="10" class="empty">Loading recorded alerts…</td></tr></tbody></table></div>
+<div class="note"><strong>How to read this:</strong> Account labels are anonymized; no email addresses or user IDs are exposed. These are back-calculated estimates from recorded alerts and price history, not verified customer profits or executed trades. The purchase price and quantity are the values currently configured on the stock record, which may differ from their values when the alert fired. Results exclude brokerage, taxes, spread, slippage, partial fills and data gaps. A missing buy-back observation does not mean the price never reached the target; the feed may have missed it.</div>
+</section>
+<p class="foot">Market data uses a public Yahoo Finance feed and may be delayed, incomplete or rate-limited. The scanner is alert-only; it does not place orders.<br><span id="updated">Loading live metrics…</span></p>
+</main>
+<script>
+const fmtMoney=value=>value===null||value===undefined?'—':'₹'+Number(value).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtQty=value=>value===null||value===undefined?'—':Number(value).toLocaleString('en-IN',{maximumFractionDigits:4});
+const fmtTime=value=>{if(!value)return '—';const date=new Date(value);return Number.isNaN(date.getTime())?value:date.toLocaleString('en-IN',{timeZone:'Asia/Kolkata'});};
+function cell(row,text,className){const td=document.createElement('td');td.textContent=text;if(className)td.className=className;row.appendChild(td);}
+(async()=>{
+try{
+ const statsResponse=await fetch('/api/showcase/stats');if(!statsResponse.ok)throw Error('stats');const stats=await statsResponse.json();
+ [['users','onboarded_users'],['stocks','stocks_tracked'],['alerts','alerts_generated']].forEach(([id,key])=>document.getElementById(id).textContent=Number(stats[key]||0).toLocaleString('en-IN'));
+ const response=await fetch('/api/public/showcase/alert-outcomes');if(!response.ok)throw Error('outcomes');const data=await response.json();
+ const body=document.getElementById('outcomes');body.replaceChildren();
+ if(!data.rows||data.rows.length===0){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=10;td.className='empty';td.textContent='No recorded SELL alerts are available to display yet.';tr.appendChild(td);body.appendChild(tr);}
+ else data.rows.forEach(item=>{
+  const tr=document.createElement('tr');
+  cell(tr,item.account||'Account');cell(tr,fmtTime(item.alert_time));cell(tr,(item.symbol||'—')+' ('+(item.exchange||'NSE')+')');cell(tr,fmtMoney(item.sell_signal_price));cell(tr,fmtMoney(item.configured_purchase_price));cell(tr,fmtQty(item.configured_quantity));
+  const pnl=item.gross_sale_pnl;cell(tr,fmtMoney(pnl),pnl===null?'':pnl>=0?'gain':'loss');
+  cell(tr,fmtMoney(item.simulated_buyback_price));const saving=item.simulated_buyback_saving;cell(tr,fmtMoney(saving),saving===null?'':saving>=0?'gain':'loss');cell(tr,item.buyback_status||'—');
+  body.appendChild(tr);
+ });
+ document.getElementById('updated').textContent='Live data updated '+new Date(data.updated_at||stats.updated_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST · '+(data.rows||[]).length+' SELL-alert rows loaded';
+}catch(e){document.getElementById('outcomes').innerHTML='<tr><td colspan="10" class="empty">Recorded alert outcomes are temporarily unavailable; refresh later.</td></tr>';document.getElementById('updated').textContent='Live metrics temporarily unavailable; refresh later.';}
+})();
+</script></body></html>
