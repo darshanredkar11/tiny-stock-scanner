@@ -31,7 +31,7 @@
 <section id="authPanel" class="panel auth">
 <h2 id="authTitle">Sign in</h2>
 <div class="notice">Public Yahoo Finance prices are used; they may be delayed or unavailable. No Zerodha login is required. WhatsApp delivery activates when Meta WhatsApp Cloud API credentials are configured.</div>
-<div class="grid"><div><label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com"></div><div><label for="password">Password (12+ characters)</label><input id="password" type="password" autocomplete="current-password" minlength="12"></div></div>
+<div class="grid"><div><label for="email">Email</label><input id="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required spellcheck="false" placeholder="you@example.com"></div><div><label for="password">Password (12+ characters)</label><input id="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></div></div>
 <div class="actions" style="margin-top:14px"><button id="authBtn">Sign in</button><button id="switchAuth" class="secondary">Create account</button></div><div id="authStatus" class="status" role="alert" aria-live="assertive" aria-atomic="true"></div>
 </section>
 <section id="publicShowcase" class="panel public-showcase">
@@ -56,12 +56,12 @@
 <div id="overviewSection" class="page-section"><div class="panel"><div class="section-heading"><div><h2>Today's activity</h2><p>New signals first, older alerts kept in history</p></div><button class="secondary" data-go="alertsSection">View all alerts</button></div><div id="todayHighlights"><div class="signal-empty">Your latest alerts will appear here as the scanner detects them.</div></div></div><div class="panel light"><div class="section-heading"><div><h2>Scanner health</h2><p>Check freshness before acting on a signal</p></div><span class="pill" id="healthBadge">Checking data</span></div><p id="marketStatus" class="muted" role="status">Waiting for scanner status…</p><p id="marketDetails" class="muted"></p></div></div>
 <div id="stocksSection" class="page-section hidden"><div class="panel light"><h2>Add a stock</h2>
 <div class="grid">
-<div><label for="symbol">Symbol</label><input id="symbol" maxlength="24" placeholder="RELIANCE"></div>
+<div><label for="symbol">Symbol</label><input id="symbol" maxlength="24" pattern="[A-Za-z0-9&._-]+" required spellcheck="false" placeholder="RELIANCE"></div>
 <div><label for="exchange">Exchange</label><select id="exchange"><option>NSE</option><option>BSE</option></select></div>
-<div><label for="purchase">Purchase price (optional)</label><input id="purchase" type="number" min="0" step="0.01" placeholder="e.g. 1250"></div>
-<div><label for="quantity">Purchase quantity (optional)</label><input id="quantity" type="number" min="0.0001" step="any" placeholder="e.g. 100"></div>
-<div><label for="previous">Previous close (optional)</label><input id="previous" type="number" min="0" step="0.01" placeholder="e.g. 1230"></div>
-<div><label for="resistance">Resistance (optional)</label><input id="resistance" type="number" min="0" step="0.01" placeholder="e.g. 1280"></div><div><label for="sellTarget">Sell target above previous close (%)</label><input id="sellTarget" type="number" min="0.1" max="50" step="0.1" value="2.0" required></div>
+<div><label for="purchase">Purchase price (optional)</label><input id="purchase" type="number" min="0.01" max="1000000000" step="0.01" placeholder="e.g. 1250"></div>
+<div><label for="quantity">Purchase quantity (optional)</label><input id="quantity" type="number" min="0.0001" max="1000000000" step="any" placeholder="e.g. 100"></div>
+<div><label for="previous">Previous close (optional)</label><input id="previous" type="number" min="0.01" max="1000000000" step="0.01" placeholder="e.g. 1230"></div>
+<div><label for="resistance">Resistance (optional)</label><input id="resistance" type="number" min="0.01" max="1000000000" step="0.01" placeholder="e.g. 1280"></div><div><label for="sellTarget">Sell target above previous close (%)</label><input id="sellTarget" type="number" min="0.1" max="50" step="0.1" value="2.0" required></div>
 </div>
 <div class="actions" style="margin-top:14px"><button id="addBtn">Add to watchlist</button><span class="muted" id="countText">0 / 60 stocks</span></div><div id="stockStatus" class="status" role="status"></div>
 </div>
