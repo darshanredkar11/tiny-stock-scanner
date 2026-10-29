@@ -314,6 +314,7 @@ def scan_once(database, now: datetime | None = None, fetcher=fetch_market_prices
                 purchase_price=stock.get("purchase_price"),
                 resistance=stock.get("resistance"),
                 now=now,
+                target_percent=stock.get("sell_target_percent", 2.0),
             )
         buyback_signal = evaluate_buyback(
             price=price,
