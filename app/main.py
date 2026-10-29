@@ -93,14 +93,96 @@ def public_showcase_stats():
         "updated_at": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
     }
 
-@app.get("/showcase", include_in_schema=False)
-def public_showcase():
-    return FileResponse(os.path.join(os.path.dirname(__file__), "static", "showcase.html"))
 
-@app.get("/api/public/showcase")
-def public_showcase_stats():
+@app.get("/api/public/showcase/alert-outcomes")
+def public_showcase_alert_outcomes():
+    """Public, anonymized simulations calculated from real stored SELL alerts and price history."""
     database = get_db()
-    return {"onboarded_users": database.users.count_documents({}), "examples_are_simulated": True}
+    alerts = list(database.alerts.find({"action": "SELL"}).sort("created_at", -1).limit(100))
+    user_ids = sorted({str(alert.get("user_id", "")) for alert in alerts if alert.get("user_id")})
+    account_labels = {user_id: f"Account {index + 1:02d}" for index, user_id in enumerate(user_ids)}
+    rows = []
+
+    for alert in alerts:
+        user_id = str(alert.get("user_id", ""))
+        stock_id = str(alert.get("stock_id", ""))
+        created_at = str(alert.get("created_at", ""))
+        try:
+            sell_price = float(alert.get("price"))
+        except (TypeError, ValueError):
+            continue
+
+        stock = None
+        try:
+            stock = database.stocks.find_one({"_id": ObjectId(stock_id), "user_id": user_id})
+        except Exception:
+            stock = None
+
+        quantity = None
+        purchase_price = None
+        if stock:
+            try:
+                quantity = float(stock.get("purchase_quantity")) if stock.get("purchase_quantity") is not None else None
+            except (TypeError, ValueError):
+                quantity = None
+            try:
+                purchase_price = float(stock.get("purchase_price")) if stock.get("purchase_price") is not None else None
+            except (TypeError, ValueError):
+                purchase_price = None
+
+        gross_sale_pnl = None
+        if quantity is not None and purchase_price is not None:
+            gross_sale_pnl = round((sell_price - purchase_price) * quantity, 2)
+
+        # Simulate a 1% lower re-entry using subsequent recorded price points
+        # from the same trading date. This is not evidence that a user traded.
+        buyback_price = None
+        if user_id and stock_id and created_at and "T" in created_at:
+            trading_date = created_at[:10]
+            end_of_day = trading_date + "T23:59:59.999999+05:30"
+            history = database.price_history.find({
+                "user_id": user_id,
+                "stock_id": stock_id,
+                "timestamp": {"$gt": created_at, "$lt": end_of_day},
+            }).sort("timestamp", 1)
+            target_price = sell_price * 0.99
+            for point in history:
+                try:
+                    point_price = float(point.get("price"))
+                except (TypeError, ValueError):
+                    continue
+                if point_price > 0 and point_price <= target_price:
+                    buyback_price = round(point_price, 2)
+                    break
+
+        buyback_saving = None
+        if buyback_price is not None and quantity is not None:
+            buyback_saving = round((sell_price - buyback_price) * quantity, 2)
+
+        rows.append({
+            "account": account_labels.get(user_id, "Account"),
+            "symbol": alert.get("symbol", "—"),
+            "exchange": alert.get("exchange", "NSE"),
+            "alert_time": created_at,
+            "sell_signal_price": round(sell_price, 2),
+            "configured_purchase_price": round(purchase_price, 2) if purchase_price is not None else None,
+            "configured_quantity": quantity,
+            "gross_sale_pnl": gross_sale_pnl,
+            "simulated_buyback_price": buyback_price,
+            "simulated_buyback_saving": buyback_saving,
+            "buyback_status": "1% lower price observed later that day" if buyback_price is not None else "No matching 1% lower price point recorded later that day",
+            "alert_reason": alert.get("reason", ""),
+        })
+
+    return {
+        "rows": rows,
+        "source": "Stored SELL alerts and recorded price history",
+        "outcomes_are_simulated": True,
+        "real_trades_verified": False,
+        "updated_at": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+    }
+
+
 _mongo_client = None
 
 def configure_indexes(database):
