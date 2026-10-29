@@ -78,6 +78,15 @@ def start_scanner_worker():
 @app.get("/", include_in_schema=False)
 def dashboard():
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "index.html"))
+
+@app.get("/showcase", include_in_schema=False)
+def public_showcase():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "static", "showcase.html"))
+
+@app.get("/api/public/showcase")
+def public_showcase_stats():
+    database = get_db()
+    return {"onboarded_users": database.users.count_documents({}), "examples_are_simulated": True}
 _mongo_client = None
 
 def configure_indexes(database):
