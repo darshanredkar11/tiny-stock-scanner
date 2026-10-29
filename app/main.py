@@ -247,7 +247,7 @@ class Credentials(BaseModel):
             not local or len(local) > 64 or local.startswith(".") or local.endswith(".")
             or ".." in local or "." not in domain or len(domain) > 253
             or not re.fullmatch(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+", local)
-            or not re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}", domain)
+            or not re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}", domain)
         ):
             raise ValueError("Enter a valid email address")
         return value
