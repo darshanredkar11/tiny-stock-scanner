@@ -79,10 +79,6 @@ def start_scanner_worker():
 def dashboard():
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "index.html"))
 
-@app.get("/showcase", include_in_schema=False)
-def public_showcase():
-    return FileResponse(os.path.join(os.path.dirname(__file__), "static", "showcase.html"))
-
 @app.get("/api/showcase/stats")
 def public_showcase_stats():
     database = get_db()
