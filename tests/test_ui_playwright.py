@@ -134,6 +134,7 @@ def create_account(page: Page, dashboard_url: str):
 
 
 def add_stock(page: Page, symbol="RELIANCE"):
+    page.get_by_role("button", name="My Stocks").click()
     page.locator("#symbol").fill(symbol)
     page.locator("#exchange").select_option("NSE")
     page.locator("#purchase").fill("120")
@@ -174,6 +175,7 @@ def test_record_sale_price_for_buyback_tracking(page: Page, dashboard_url: str, 
 
 def test_symbol_required_and_logout(page: Page, dashboard_url: str, fake_api):
     create_account(page, dashboard_url)
+    page.get_by_role("button", name="My Stocks").click()
     page.locator("#addBtn").click()
     expect(page.locator("#stockStatus")).to_have_text("Enter a stock symbol.")
     expect(page.locator("#stocksBody tr")).to_have_count(0)
