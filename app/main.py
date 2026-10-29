@@ -65,6 +65,7 @@ def _scanner_loop():
 @app.on_event("startup")
 def start_scanner_worker():
     global _scanner_thread
+    _start_showcase_refresh()
     enabled = os.getenv("SCANNER_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
     if MONGODB_URI and enabled and (_scanner_thread is None or not _scanner_thread.is_alive()):
         _scanner_thread = threading.Thread(target=_scanner_loop, name="market-scanner", daemon=True)
@@ -79,8 +80,7 @@ def start_scanner_worker():
 def dashboard():
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "index.html"))
 
-@app.get("/api/showcase/stats")
-def public_showcase_stats():
+def _compute_public_showcase_stats():
     database = get_db()
     return {
         "onboarded_users": database.users.count_documents({}),
@@ -90,8 +90,38 @@ def public_showcase_stats():
     }
 
 
-@app.get("/api/public/showcase/alert-outcomes")
-def public_showcase_alert_outcomes():
+# Process-local stale-while-revalidate cache: public demo endpoints must never
+# make a presenter wait on MongoDB. A background worker refreshes snapshots.
+_SHOWCASE_CACHE_TTL_SECONDS = 60
+_showcase_cache_lock = threading.Lock()
+_showcase_cache = {
+    "stats": {"onboarded_users": 0, "stocks_tracked": 0, "alerts_generated": 0, "updated_at": None},
+    "outcomes": {
+        "rows": [],
+        "source": "Stored SELL alerts and recorded price history",
+        "outcomes_are_simulated": True,
+        "real_trades_verified": False,
+        "updated_at": None,
+    },
+}
+_showcase_cache_expiry = {"stats": 0.0, "outcomes": 0.0}
+_showcase_refresh_thread = None
+
+
+@app.get("/api/showcase/stats")
+def public_showcase_stats():
+    now = time.monotonic()
+    with _showcase_cache_lock:
+        cached = _showcase_cache["stats"]
+        fresh = _showcase_cache_expiry["stats"] > now
+    if fresh:
+        return dict(cached)
+    # Return stale snapshot immediately; refreshing never happens on the request path.
+    _start_showcase_refresh()
+    return dict(cached)
+
+
+def _compute_public_showcase_alert_outcomes():
     """Public, anonymized simulations calculated from real stored SELL alerts and price history."""
     database = get_db()
     alerts = list(database.alerts.find({"action": "SELL"}).sort("created_at", -1).limit(100))
@@ -177,6 +207,57 @@ def public_showcase_alert_outcomes():
         "real_trades_verified": False,
         "updated_at": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
     }
+
+
+@app.get("/api/public/showcase/alert-outcomes")
+def public_showcase_alert_outcomes():
+    now = time.monotonic()
+    with _showcase_cache_lock:
+        cached = _showcase_cache["outcomes"]
+        fresh = _showcase_cache_expiry["outcomes"] > now
+    if fresh:
+        return dict(cached)
+    # Serve the last known snapshot (or a fast empty snapshot during cold start).
+    _start_showcase_refresh()
+    return dict(cached)
+
+
+def _refresh_showcase_cache():
+    started = time.monotonic()
+    try:
+        stats = _compute_public_showcase_stats()
+        with _showcase_cache_lock:
+            _showcase_cache["stats"] = stats
+            _showcase_cache_expiry["stats"] = time.monotonic() + _SHOWCASE_CACHE_TTL_SECONDS
+        logger.info("showcase_cache_refresh endpoint=stats duration_ms=%s", int((time.monotonic() - started) * 1000))
+    except Exception as exc:
+        logger.warning("showcase_cache_refresh_failed endpoint=stats exception_type=%s", type(exc).__name__)
+
+    started = time.monotonic()
+    try:
+        outcomes = _compute_public_showcase_alert_outcomes()
+        with _showcase_cache_lock:
+            _showcase_cache["outcomes"] = outcomes
+            _showcase_cache_expiry["outcomes"] = time.monotonic() + _SHOWCASE_CACHE_TTL_SECONDS
+        logger.info("showcase_cache_refresh endpoint=outcomes rows=%s duration_ms=%s", len(outcomes.get("rows", [])), int((time.monotonic() - started) * 1000))
+    except Exception as exc:
+        logger.warning("showcase_cache_refresh_failed endpoint=outcomes exception_type=%s", type(exc).__name__)
+
+
+def _showcase_refresh_loop():
+    while True:
+        _refresh_showcase_cache()
+        time.sleep(_SHOWCASE_CACHE_TTL_SECONDS)
+
+
+def _start_showcase_refresh():
+    global _showcase_refresh_thread
+    with _showcase_cache_lock:
+        if _showcase_refresh_thread is None or not _showcase_refresh_thread.is_alive():
+            _showcase_refresh_thread = threading.Thread(
+                target=_showcase_refresh_loop, name="showcase-cache-refresh", daemon=True
+            )
+            _showcase_refresh_thread.start()
 
 
 _mongo_client = None
