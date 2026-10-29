@@ -53,7 +53,7 @@ def _chart_api_fallback(ticker: str, now: datetime) -> dict | None:
         try:
             response = requests.get(
                 f"https://{host}/v8/finance/chart/{ticker}",
-                params=params, headers=headers, timeout=8,
+                params=params, headers=headers, timeout=4,
             )
             if response.status_code == 429:
                 continue
@@ -116,14 +116,14 @@ def fetch_market_prices(stocks: list[dict], now: datetime | None = None) -> dict
         try:
             intraday = yf.download(
                 tickers=batch, period="1d", interval="1m", group_by="ticker",
-                auto_adjust=False, prepost=False, progress=False, threads=True, timeout=20,
+                auto_adjust=False, prepost=False, progress=False, threads=True, timeout=10,
             )
         except Exception:
             intraday = None
         try:
             daily = yf.download(
                 tickers=batch, period="5d", interval="1d", group_by="ticker",
-                auto_adjust=False, prepost=False, progress=False, threads=True, timeout=20,
+                auto_adjust=False, prepost=False, progress=False, threads=True, timeout=10,
             )
         except Exception:
             daily = None
@@ -314,6 +314,7 @@ def scan_once(database, now: datetime | None = None, fetcher=fetch_market_prices
                 purchase_price=stock.get("purchase_price"),
                 resistance=stock.get("resistance"),
                 now=now,
+                target_percent=stock.get("sell_target_percent", 2.0),
             )
         buyback_signal = evaluate_buyback(
             price=price,

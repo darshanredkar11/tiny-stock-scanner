@@ -45,3 +45,10 @@ def test_buyback_requires_actual_sale():
 
 def test_weekend_is_blocked():
     assert evaluate_sell(price=110, previous_close=100, purchase_price=None, resistance=None, now=dt(24,9,30)) is None
+
+
+def test_custom_sell_target_is_used_instead_of_default():
+    assert evaluate_sell(price=101.5, previous_close=100, purchase_price=None, resistance=None,
+                         now=dt(20,9,30), target_percent=1.5).reason == "at least 1.5% above previous close"
+    assert evaluate_sell(price=101.5, previous_close=100, purchase_price=None, resistance=None,
+                         now=dt(20,9,30), target_percent=2.0) is None
