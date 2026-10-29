@@ -36,14 +36,16 @@ _scanner_thread = None
 
 def _scanner_loop():
     while True:
+        cycle_started = time.monotonic()
         try:
             result = scan_once(get_db())
             _scanner_status.update(result)
             logger.info(
-                "scanner_cycle status=%s stocks_scanned=%s alerts_created=%s source=%s message=%s",
+                "scanner_cycle status=%s stocks_scanned=%s alerts_created=%s duration_ms=%s source=%s message=%s",
                 result.get("status"),
                 result.get("stocks_scanned", 0),
                 result.get("alerts_created", 0),
+                int((time.monotonic() - cycle_started) * 1000),
                 result.get("source", DATA_SOURCE),
                 result.get("message", ""),
             )
@@ -55,7 +57,9 @@ def _scanner_loop():
                 "source": DATA_SOURCE,
             })
             logger.exception("scanner_cycle_failed exception_type=%s", type(exc).__name__)
-        time.sleep(SCAN_INTERVAL_SECONDS)
+        # Keep the interval measured from cycle start rather than adding the
+        # full interval after slow provider calls. Never spin on a slow cycle.
+        time.sleep(max(1, SCAN_INTERVAL_SECONDS - (time.monotonic() - cycle_started)))
 
 
 @app.on_event("startup")
