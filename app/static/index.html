@@ -8,6 +8,21 @@
 :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:#e9eef8;background:#0c1220;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0}header{padding:22px max(20px,calc((100% - 1080px)/2));border-bottom:1px solid #263149;background:#101a2b;display:flex;align-items:center;justify-content:space-between;gap:12px}h1{font-size:21px;margin:0}header p{margin:5px 0 0;color:#9fb0ca;font-size:13px}.wrap{max-width:1080px;margin:28px auto;padding:0 20px}.panel{background:#121d30;border:1px solid #263650;border-radius:14px;padding:20px;margin-bottom:18px}.panel h2{font-size:17px;margin:0 0 15px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}label{font-size:12px;color:#aebed4;display:block;margin-bottom:6px}input,select{width:100%;border:1px solid #344660;background:#0c1525;color:#eef4ff;border-radius:8px;padding:11px;font:inherit;min-width:0}button{border:0;border-radius:8px;padding:11px 15px;background:#c6e4ff;color:#11233a;font-weight:700;cursor:pointer}button.secondary{background:#263650;color:#eaf2ff}button.danger{background:#4a2833;color:#ffdce3}.actions{display:flex;gap:9px;align-items:end;flex-wrap:wrap}.actions button{white-space:nowrap}.status{color:#aebed4;font-size:13px;min-height:18px;margin-top:12px}.status.error{color:#ff9aa8}.status.ok{color:#a8edc1}.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid #263650;font-size:13px}th{color:#9fb0ca;font-weight:600}.muted{color:#9fb0ca;font-size:13px}.pill{font-size:11px;border:1px solid #344660;padding:4px 7px;border-radius:99px;color:#b8c8de}.hidden{display:none!important}.auth{max-width:430px;margin:8vh auto}.auth .grid{grid-template-columns:1fr}.notice{color:#d4dfef;background:#1b2a40;border-radius:9px;padding:12px;font-size:13px;line-height:1.5;margin-bottom:16px}.top-actions{display:flex;gap:8px;align-items:center}@media(max-width:750px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}header{padding:18px 20px}.wrap{margin:18px auto}.panel{padding:15px}}@media(max-width:450px){.grid{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}}
 .shell{max-width:1160px;margin:0 auto;padding:0 22px}.hero{background:linear-gradient(130deg,#101a2b 0%,#172a43 58%,#203d59 100%);border:1px solid #2b4563;border-radius:20px;padding:24px;margin:22px 0 18px}.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9bc8f1;font-weight:800}.hero h2{font-size:clamp(23px,4vw,34px);line-height:1.15;margin:8px 0}.hero p{color:#b8c9dc;max-width:680px;line-height:1.55;margin:0}.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0 22px}.summary-card{background:#fff;color:#142238;border:1px solid #dbe4ef;border-radius:14px;padding:16px;box-shadow:0 4px 18px #07101f20}.summary-card span{display:block;color:#64748b;font-size:12px}.summary-card strong{display:block;font-size:25px;margin:8px 0 4px;font-variant-numeric:tabular-nums}.summary-card small{color:#64748b}.summary-card.dark{background:#17263b;border-color:#2b3d56;color:#f0f6ff}.summary-card.dark span,.summary-card.dark small{color:#aebed4}.navtabs{display:flex;gap:8px;overflow-x:auto;padding:5px 0 12px;margin-bottom:4px}.navtabs button{background:transparent;color:#9fb0ca;border:1px solid transparent;white-space:nowrap}.navtabs button.active{background:#dceeff;color:#173451;border-color:#c1ddf5}.page-section{scroll-margin-top:12px}.panel.light{background:#fff;color:#152238;border-color:#dce5ef;box-shadow:0 5px 20px #07101f12}.panel.light h2{color:#152238}.panel.light label,.panel.light .muted,.panel.light th{color:#61718a}.panel.light input,.panel.light select{background:#f7f9fc;color:#152238;border-color:#d5dfeb}.panel.light td{border-color:#e6edf5}.panel.light .pill{color:#425a76;border-color:#d5dfeb}.panel.light .status{color:#26734b}.panel.light .status.error{color:#b4233b}.panel.light button.secondary{background:#e9eff7;color:#213752}.panel.light button.danger{background:#ffebee;color:#a12639}.section-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}.section-heading h2{margin:0}.section-heading p{margin:4px 0 0;color:#708099;font-size:13px}.signal-empty{border:1px dashed #3c526d;border-radius:12px;padding:16px;color:#aebed4}.alert-today{background:#fff;border:1px solid #dce5ef;border-radius:12px;padding:13px 15px;margin:9px 0;color:#1b2b42}.alert-today strong{color:#172a42}.alert-today small{display:block;color:#63758d;margin-top:5px}.freshness-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#67d6a0;margin-right:7px}@media(max-width:760px){.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{padding:20px}.shell{padding:0 14px}.summary-card{padding:13px}.summary-card strong{font-size:22px}}@media(max-width:420px){.summary-grid{gap:8px}.summary-card strong{font-size:20px}.summary-card{padding:11px}}
+.auth{max-width:1160px;margin:8vh auto 18px}
+.auth .notice{max-width:680px}
+.auth .status{padding:0;margin-top:12px;min-height:0;transition:background .15s}
+.auth .status.error{display:block;background:#421d2a;border:1px solid #a83d54;color:#ffdbe2;padding:12px 14px;border-radius:9px;font-weight:650}
+.auth .status.ok{display:block;background:#173b2d;border:1px solid #2c8057;color:#c9ffe0;padding:12px 14px;border-radius:9px}
+.auth .status:empty{display:none}
+.public-showcase{max-width:1160px;margin:0 auto 24px}
+.public-showcase h2{margin:18px 0 8px}
+.public-showcase .summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.public-showcase .tablewrap{overflow-x:auto}
+.public-showcase table{min-width:1080px}
+.public-showcase th,.public-showcase td{white-space:nowrap}
+.public-showcase .gain{color:#16794a;font-weight:800}
+.public-showcase .loss{color:#b4233b;font-weight:800}
+@media(max-width:760px){.auth{margin:22px auto 16px}.public-showcase{margin:0 0 18px}.public-showcase .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -17,7 +32,22 @@
 <h2 id="authTitle">Sign in</h2>
 <div class="notice">Public Yahoo Finance prices are used; they may be delayed or unavailable. No Zerodha login is required. WhatsApp delivery activates when Meta WhatsApp Cloud API credentials are configured.</div>
 <div class="grid"><div><label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com"></div><div><label for="password">Password (12+ characters)</label><input id="password" type="password" autocomplete="current-password" minlength="12"></div></div>
-<div class="actions" style="margin-top:14px"><button id="authBtn">Sign in</button><button id="switchAuth" class="secondary">Create account</button></div><div id="authStatus" class="status" role="status"></div>
+<div class="actions" style="margin-top:14px"><button id="authBtn">Sign in</button><button id="switchAuth" class="secondary">Create account</button></div><div id="authStatus" class="status" role="alert" aria-live="assertive" aria-atomic="true"></div>
+</section>
+<section id="publicShowcase" class="panel public-showcase">
+  <div class="eyebrow">Tiny Stock Scanner · live product snapshot</div>
+  <h2>Real alerts. Transparent calculations.</h2>
+  <p class="muted">Recorded SELL alerts and stored price history, shown below the sign-in form. Account labels are anonymized. Outcomes are simulated estimates, not verified executed trades.</p>
+  <div class="summary-grid">
+    <div class="summary-card"><span>Onboarded accounts</span><strong id="publicUsers">—</strong><small>Registered accounts</small></div>
+    <div class="summary-card"><span>Stocks tracked</span><strong id="publicStocks">—</strong><small>Across watchlists</small></div>
+    <div class="summary-card"><span>Alerts recorded</span><strong id="publicAlerts">—</strong><small>Stored signals</small></div>
+  </div>
+  <h2>Recorded SELL alerts — row-by-row simulation</h2>
+  <p class="muted">Gross sale P/L compares the recorded SELL alert price with the currently configured purchase price × quantity. Buy-back saving uses the first recorded same-day price at least 1% below the SELL signal, where available. Missing values are shown as unavailable, not guessed.</p>
+  <div class="tablewrap"><table><thead><tr><th>Account</th><th>Alert time (IST)</th><th>Stock</th><th>SELL signal</th><th>Configured buy price</th><th>Quantity</th><th>Gross sale P/L</th><th>Simulated buy-back</th><th>Buy-back saving</th><th>Price-history result</th></tr></thead><tbody id="publicOutcomes"><tr><td colspan="10" class="muted">Loading recorded alerts…</td></tr></tbody></table></div>
+  <div class="notice" style="margin-top:16px"><strong>Important:</strong> Real alert records; simulated calculations, not proof of trades or net profits. Current purchase settings may differ from settings at alert time. Excludes brokerage, taxes, spread, slippage and partial fills. Public market data can be delayed or incomplete, so an unobserved buy-back price is not proof the price never occurred.</div>
+  <p id="publicUpdated" class="muted" aria-live="polite">Loading live metrics…</p>
 </section>
 <section id="appPanel" class="hidden">
 <div class="hero"><div class="eyebrow">Tiny Stock Scanner · Personal workspace</div><h2>Good morning. Stay ahead of your signals.</h2><p>One clear view of your watchlist, market signals and scanner health. Alerts only — no orders are ever placed.</p></div>
@@ -88,6 +118,7 @@ async function api(path, options={}) {
 }
 function renderAuth(){
   $('authPanel').classList.toggle('hidden',!!token);
+  $('publicShowcase').classList.toggle('hidden',!!token);
   $('appPanel').classList.toggle('hidden',!token);
   $('logoutBtn').classList.toggle('hidden',!token);
   $('soundBtn').classList.toggle('hidden',!token);
@@ -101,13 +132,27 @@ $('switchAuth').onclick=()=>{registerMode=!registerMode;renderAuth();showStatus(
 $('authBtn').onclick=async()=>{
  enableAlertSound();
  const em=$('email').value.trim().toLowerCase(), pw=$('password').value;
- if(!em||pw.length<12){showStatus('authStatus','Enter a valid email and a password of at least 12 characters.',true);return;}
+ if(!em||pw.length<12){
+  showStatus('authStatus','⚠ Check your email and password. Passwords must contain at least 12 characters.',true);
+  $('password').focus();return;
+ }
  $('authBtn').disabled=true;
+ $('authBtn').textContent=registerMode?'Creating account…':'Signing in…';
+ showStatus('authStatus','');
  try{
   const result=await api(registerMode?'/api/register':'/api/login',{method:'POST',body:JSON.stringify({email:em,password:pw})});
   token=result.access_token;email=em;sessionStorage.setItem('tss_token',token);sessionStorage.setItem('tss_email',email);renderAuth();await loadStocks();
- }catch(e){showStatus('authStatus',e.message,true);}finally{$('authBtn').disabled=false;}
+ }catch(e){
+  const message=e.message==='Invalid credentials'?'⚠ Email or password is incorrect. Please try again.':(e.message==='Request failed'?'⚠ Sign-in failed. Please check your details and try again.':'⚠ '+e.message);
+  showStatus('authStatus',message,true);
+  $('password').focus();
+ }finally{
+  $('authBtn').disabled=false;
+  $('authBtn').textContent=registerMode?'Create account':'Sign in';
+ }
 };
+$('email').addEventListener('input',()=>{if($('authStatus').classList.contains('error'))showStatus('authStatus','');});
+$('password').addEventListener('input',()=>{if($('authStatus').classList.contains('error'))showStatus('authStatus','');});
 $('logoutBtn').onclick=()=>{token='';email='';sessionStorage.removeItem('tss_token');sessionStorage.removeItem('tss_email');renderAuth();};
 function numOrNull(id){const v=$(id).value;return v===''?null:Number(v);}
 $('addBtn').onclick=async()=>{
@@ -183,7 +228,27 @@ async function loadHistory(){
  try{historyByStock=await api('/api/market/history');const select=$('chartSymbol'),prior=select.value,symbols=Object.keys(historyByStock).sort();select.replaceChildren();for(const key of symbols){const opt=document.createElement('option');opt.value=key;opt.textContent=key;select.appendChild(opt);}if(symbols.includes(prior))select.value=prior;else if(symbols.length)select.value=symbols[0];renderPriceChart();}
  catch(e){$('chartStatus').textContent='Price history unavailable: '+e.message;}
 }
-document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>showSection(button.dataset.section)));document.querySelectorAll('[data-go]').forEach(button=>button.addEventListener('click',()=>showSection(button.dataset.go)));function showSection(id){document.querySelectorAll('.page-section').forEach(section=>section.classList.toggle('hidden',section.id!==id));document.querySelectorAll('[data-section]').forEach(tab=>tab.classList.toggle('active',tab.dataset.section===id));} $('stockSearch').addEventListener('input',()=>{const query=$('stockSearch').value.trim().toLowerCase();document.querySelectorAll('#stocksBody tr').forEach(row=>row.classList.toggle('hidden',!row.dataset.search.includes(query)));});renderAuth();if(token)loadStocks();setInterval(()=>{if(token)loadStocks();},15000);
+async function loadPublicShowcase(){
+ const body=$('publicOutcomes');
+ const money=value=>value===null||value===undefined?'—':'₹'+Number(value).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const qty=value=>value===null||value===undefined?'—':Number(value).toLocaleString('en-IN',{maximumFractionDigits:4});
+ const time=value=>{if(!value)return '—';const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toLocaleString('en-IN',{timeZone:'Asia/Kolkata'});};
+ const addCell=(tr,value,cls='')=>{const td=document.createElement('td');td.textContent=value;if(cls)td.className=cls;tr.appendChild(td);};
+ try{
+  const [statsResponse,outcomeResponse]=await Promise.all([fetch('/api/showcase/stats'),fetch('/api/public/showcase/alert-outcomes')]);
+  if(!statsResponse.ok||!outcomeResponse.ok)throw new Error('Live alert data is temporarily unavailable.');
+  const stats=await statsResponse.json(), outcomes=await outcomeResponse.json();
+  [['publicUsers','onboarded_users'],['publicStocks','stocks_tracked'],['publicAlerts','alerts_generated']].forEach(([id,key])=>$(id).textContent=Number(stats[key]||0).toLocaleString('en-IN'));
+  body.replaceChildren();
+  if(!outcomes.rows||!outcomes.rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=10;td.className='muted';td.textContent='No recorded SELL alerts are available yet.';tr.appendChild(td);body.appendChild(tr);}
+  else outcomes.rows.forEach(item=>{
+   const tr=document.createElement('tr'),pnl=item.gross_sale_pnl,saving=item.simulated_buyback_saving;
+   addCell(tr,item.account||'Account');addCell(tr,time(item.alert_time));addCell(tr,(item.symbol||'—')+' ('+(item.exchange||'NSE')+')');addCell(tr,money(item.sell_signal_price));addCell(tr,money(item.configured_purchase_price));addCell(tr,qty(item.configured_quantity));addCell(tr,money(pnl),pnl===null?'':pnl>=0?'gain':'loss');addCell(tr,money(item.simulated_buyback_price));addCell(tr,money(saving),saving===null?'':saving>=0?'gain':'loss');addCell(tr,item.buyback_status||'—');body.appendChild(tr);
+  });
+  $('publicUpdated').textContent='Updated '+new Date(outcomes.updated_at||stats.updated_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST · '+(outcomes.rows||[]).length+' recorded SELL alerts';
+ }catch(e){body.replaceChildren();const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=10;td.className='muted';td.textContent='Recorded alert data is temporarily unavailable. Please refresh later.';tr.appendChild(td);body.appendChild(tr);$('publicUpdated').textContent=e.message;}
+}
+document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>showSection(button.dataset.section)));document.querySelectorAll('[data-go]').forEach(button=>button.addEventListener('click',()=>showSection(button.dataset.go)));function showSection(id){document.querySelectorAll('.page-section').forEach(section=>section.classList.toggle('hidden',section.id!==id));document.querySelectorAll('[data-section]').forEach(tab=>tab.classList.toggle('active',tab.dataset.section===id));} $('stockSearch').addEventListener('input',()=>{const query=$('stockSearch').value.trim().toLowerCase();document.querySelectorAll('#stocksBody tr').forEach(row=>row.classList.toggle('hidden',!row.dataset.search.includes(query)));});renderAuth();if(token)loadStocks();else loadPublicShowcase();setInterval(()=>{if(token)loadStocks();else loadPublicShowcase();},60000);
 </script>
 </body>
 </html>
