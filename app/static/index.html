@@ -113,7 +113,10 @@ async function api(path, options={}) {
   const response=await fetch(path,{...options,headers});
   if(response.status===204) return null;
   const data=await response.json().catch(()=>({detail:'Unexpected server response'}));
-  if(!response.ok) throw new Error(data.detail || 'Request failed');
+  if(!response.ok){
+    const detail=Array.isArray(data.detail)?data.detail.map(item=>item.msg||item.type||'Invalid input').join('; '):(data.detail||'Request failed');
+    throw new Error(detail);
+  }
   return data;
 }
 function renderAuth(){
@@ -127,13 +130,19 @@ function renderAuth(){
   $('authTitle').textContent=registerMode?'Create account':'Sign in';
   $('authBtn').textContent=registerMode?'Create account':'Sign in';
   $('switchAuth').textContent=registerMode?'I already have an account':'Create account';
+  $('password').autocomplete=registerMode?'new-password':'current-password';
+  $('password').setAttribute('aria-describedby','authStatus');
 }
-$('switchAuth').onclick=()=>{registerMode=!registerMode;renderAuth();showStatus('authStatus','');};
+$('switchAuth').onclick=()=>{registerMode=!registerMode;renderAuth();showStatus('authStatus','');if(registerMode){$('authStatus').textContent='Use an email address and a password with at least 12 characters.';} $('password').focus();};
 $('authBtn').onclick=async()=>{
  enableAlertSound();
  const em=$('email').value.trim().toLowerCase(), pw=$('password').value;
- if(!em||pw.length<12){
-  showStatus('authStatus','⚠ Check your email and password. Passwords must contain at least 12 characters.',true);
+ if(!em||!$('email').validity.valid){
+  showStatus('authStatus','Enter a valid email address (for example, you@example.com).',true);
+  $('email').focus();return;
+ }
+ if(pw.length<12){
+  showStatus('authStatus',registerMode?'Choose a password with at least 12 characters to create your account.':'Your password must contain at least 12 characters.',true);
   $('password').focus();return;
  }
  $('authBtn').disabled=true;
@@ -143,8 +152,20 @@ $('authBtn').onclick=async()=>{
   const result=await api(registerMode?'/api/register':'/api/login',{method:'POST',body:JSON.stringify({email:em,password:pw})});
   token=result.access_token;email=em;sessionStorage.setItem('tss_token',token);sessionStorage.setItem('tss_email',email);renderAuth();await loadStocks();
  }catch(e){
-  const message=e.message==='Invalid credentials'?'⚠ Email or password is incorrect. Please try again.':(e.message==='Request failed'?'⚠ Sign-in failed. Please check your details and try again.':'⚠ '+e.message);
-  showStatus('authStatus',message,true);
+  let message;
+  if(registerMode && /email already registered/i.test(e.message)){
+   registerMode=false;renderAuth();
+   message='This email already has an account. Sign in with that email, or use a different email to register.';
+  }else if(e.message==='Invalid credentials'){
+   message='Email or password is incorrect. Please try again.';
+  }else if(e.message==='Request failed'){
+   message=registerMode?'Could not create your account. Please try again in a moment.':'Could not sign in. Please check your details and try again.';
+  }else if(/timed out|networkerror|failed to fetch|load failed/i.test(e.message)){
+   message='The server could not be reached. Check your connection and try again.';
+  }else{
+   message=e.message.replace(/^⚠\\s*/, '');
+  }
+  showStatus('authStatus','⚠ '+message,true);
   $('password').focus();
  }finally{
   $('authBtn').disabled=false;

@@ -84,3 +84,11 @@ def test_wrong_password_returns_clear_authentication_error(database):
     )
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid credentials"
+
+
+def test_registration_page_explains_password_and_duplicate_email():
+    page = client.get("/").text
+    assert "Choose a password with at least 12 characters" in page
+    assert "This email already has an account" in page
+    assert "new-password" in page
+    assert "Enter a valid email address" in page
