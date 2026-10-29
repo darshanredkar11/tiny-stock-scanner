@@ -13,7 +13,7 @@ from typing import Optional
 from bson import ObjectId
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError
 from app.scanner import DATA_SOURCE, SCAN_INTERVAL_SECONDS, scan_once, whatsapp_configured
@@ -232,20 +232,40 @@ class Credentials(BaseModel):
     email: str = Field(min_length=5, max_length=254)
     password: str = Field(min_length=12, max_length=128)
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        import re
+
+        value = value.strip().lower()
+        if not value or any(char.isspace() for char in value):
+            raise ValueError("Enter a valid email address")
+        if len(value) > 254 or value.count("@") != 1:
+            raise ValueError("Enter a valid email address")
+        local, domain = value.rsplit("@", 1)
+        if (
+            not local or len(local) > 64 or local.startswith(".") or local.endswith(".")
+            or ".." in local or "." not in domain or len(domain) > 253
+            or not re.fullmatch(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+", local)
+            or not re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}", domain)
+        ):
+            raise ValueError("Enter a valid email address")
+        return value
+
 class StockInput(BaseModel):
     symbol: str = Field(min_length=1, max_length=24, pattern=r"^[A-Za-z0-9&._-]+$")
     exchange: str = Field(pattern=r"^(NSE|BSE)$")
-    purchase_price: float | None = Field(default=None, gt=0)
-    purchase_quantity: float | None = Field(default=None, gt=0)
-    previous_close: float | None = Field(default=None, gt=0)
-    resistance: float | None = Field(default=None, gt=0)
-    sell_target_percent: float = Field(default=2.0, ge=0.1, le=50)
+    purchase_price: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    purchase_quantity: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    previous_close: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    resistance: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    sell_target_percent: float = Field(default=2.0, ge=0.1, le=50, allow_inf_nan=False)
 
 class SellTargetInput(BaseModel):
-    sell_target_percent: float = Field(ge=0.1, le=50)
+    sell_target_percent: float = Field(ge=0.1, le=50, allow_inf_nan=False)
 
 class SaleInput(BaseModel):
-    actual_sell_price: float = Field(gt=0)
+    actual_sell_price: float = Field(gt=0, allow_inf_nan=False)
 
 @app.get("/health")
 def health():

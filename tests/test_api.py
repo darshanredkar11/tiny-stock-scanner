@@ -92,3 +92,52 @@ def test_registration_page_explains_password_and_duplicate_email():
     assert "This email already has an account" in page
     assert "new-password" in page
     assert "Enter a valid email address" in page
+
+
+@pytest.mark.parametrize("email", [
+    "plain-text",
+    "missing-domain@",
+    "@missing-local.com",
+    "user@localhost",
+    "user..dots@example.com",
+    "user name@example.com",
+    "user@example..com",
+])
+def test_registration_rejects_invalid_email_addresses(database, email):
+    response = client.post(
+        "/api/register",
+        json={"email": email, "password": "CorrectHorseBattery!42"},
+    )
+    assert response.status_code == 422
+
+
+def test_registration_normalizes_email_and_accepts_valid_address(database):
+    response = client.post(
+        "/api/register",
+        json={"email": "  Test.User+scanner@Example.com  ", "password": "CorrectHorseBattery!42"},
+    )
+    assert response.status_code == 201
+    assert database.users.find_one({})["email"] == "test.user+scanner@example.com"
+
+
+def test_registration_rejects_password_outside_supported_length(database):
+    short = client.post(
+        "/api/register",
+        json={"email": "short@example.com", "password": "short"},
+    )
+    long = client.post(
+        "/api/register",
+        json={"email": "long@example.com", "password": "x" * 129},
+    )
+    assert short.status_code == 422
+    assert long.status_code == 422
+
+
+def test_stock_api_rejects_non_finite_numbers(database):
+    token = register("finite@example.com")
+    response = client.post(
+        "/api/stocks",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"symbol": "ABC", "exchange": "NSE", "purchase_price": float("nan")},
+    )
+    assert response.status_code == 422
