@@ -65,3 +65,22 @@ def test_invalid_stock_id_returns_not_found(database):
     headers = {'Authorization':f'Bearer {token}'}
     assert client.delete('/api/stocks/not-an-object-id', headers=headers).status_code == 404
     assert client.post('/api/stocks/not-an-object-id/sale', headers=headers, json={'actual_sell_price':10}).status_code == 404
+
+
+def test_showcase_is_embedded_on_login_page_and_standalone_route_is_removed():
+    login_page = client.get("/")
+    assert login_page.status_code == 200
+    assert 'id="publicShowcase"' in login_page.text
+    assert 'id="authStatus" class="status" role="alert"' in login_page.text
+    assert "Email or password is incorrect" in login_page.text
+    assert client.get("/showcase").status_code == 404
+
+
+def test_wrong_password_returns_clear_authentication_error(database):
+    register("wrong-password@example.com")
+    response = client.post(
+        "/api/login",
+        json={"email": "wrong-password@example.com", "password": "IncorrectPassword!99"},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid credentials"
